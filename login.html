@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swadeshi Natural Products - Admin Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --olive:#8a9a52;
+    --olive-dark:#6e7d3e;
+    --pine:#1e3320;
+    --pine-soft:#2a4a2c;
+    --brown:#6b4c2a;
+    --parchment:#faf8f2;
+    --panel:#ffffff;
+    --line:#e7e2d4;
+    --ink:#2b2a22;
+    --ink-soft:#615f51;
+    --ink-faint:#94917f;
+    --cream:#f5f0e8;
+    --shadow:0 24px 80px rgba(30,51,32,.18);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    min-height:100vh;
+    font-family:'Inter', sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(107,76,42,.16), transparent 34%),
+      radial-gradient(circle at bottom right, rgba(138,154,82,.16), transparent 30%),
+      var(--parchment);
+    color:var(--ink);
+    display:grid;
+    place-items:center;
+    padding:24px;
+  }
+  .login-shell{
+    width:min(1080px,100%);
+    display:grid;
+    grid-template-columns:1.1fr .9fr;
+    gap:22px;
+    align-items:stretch;
+  }
+  .hero,
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:24px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .hero{
+    padding:34px;
+    background:
+      linear-gradient(135deg, rgba(30,51,32,.98), rgba(107,76,42,.75)),
+      url('images/image-9.png') center/cover;
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    min-height:620px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .brand-mark{
+    width:48px;
+    height:48px;
+    border-radius:16px;
+    background:var(--olive);
+    color:var(--pine);
+    display:grid;
+    place-items:center;
+    font-family:'Lora', serif;
+    font-weight:700;
+    font-size:20px;
+  }
+  .brand-name{
+    font-family:'Lora', serif;
+    font-size:24px;
+    font-weight:600;
+    line-height:1.1;
+  }
+  .brand-sub{
+    margin-top:4px;
+    color:rgba(255,255,255,.72);
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    font-size:11px;
+  }
+  .hero-copy{ max-width:460px; }
+  .hero-copy h1{
+    font-family:'Lora', serif;
+    font-size:48px;
+    line-height:1.05;
+    margin-top:18px;
+    margin-bottom:14px;
+  }
+  .hero-copy p{
+    font-size:15px;
+    line-height:1.7;
+    color:rgba(255,255,255,.78);
+  }
+  .hero-card{
+    margin-top:28px;
+    max-width:380px;
+    padding:16px 18px;
+    border-radius:18px;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.12);
+    backdrop-filter:blur(6px);
+  }
+  .hero-card .mini-title{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    color:rgba(255,255,255,.68);
+    margin-bottom:10px;
+  }
+  .hero-card .mini-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 0;
+    border-top:1px solid rgba(255,255,255,.12);
+  }
+  .hero-card .mini-row:first-of-type{ border-top:none; padding-top:0; }
+  .hero-card .mini-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:var(--olive);
+    flex-shrink:0;
+  }
+  .hero-card .mini-text{ font-size:13px; color:rgba(255,255,255,.84); line-height:1.45; }
+  .hero-bullets{
+    display:grid;
+    gap:12px;
+    margin-top:24px;
+  }
+  .bullet{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 14px;
+    border-radius:14px;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.1);
+  }
+  .bullet-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:var(--olive);
+    flex-shrink:0;
+  }
+  .panel{ padding:34px; display:flex; flex-direction:column; justify-content:center; }
+  .panel h2{
+    font-family:'Lora', serif;
+    font-size:28px;
+    margin-bottom:8px;
+    color:var(--pine);
+  }
+  .panel p{ color:var(--ink-faint); font-size:14px; margin-bottom:24px; line-height:1.6; }
+  form{ display:grid; gap:16px; }
+  .field{ display:grid; gap:7px; }
+  label{ font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); }
+  input{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:#fff;
+    color:var(--ink);
+    padding:13px 14px;
+    font:inherit;
+    outline:none;
+  }
+  input:focus{ border-color:var(--olive); box-shadow:0 0 0 3px rgba(138,154,82,.14); }
+  .actions{ display:grid; gap:12px; margin-top:6px; }
+  button{
+    border:none;
+    border-radius:14px;
+    padding:13px 16px;
+    font:inherit;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .primary{
+    background:var(--olive);
+    color:#fff;
+  }
+  .primary:hover{ background:var(--olive-dark); }
+  .secondary{
+    background:#f6f4ec;
+    color:var(--ink);
+    border:1px solid var(--line);
+  }
+  .secondary:hover{ background:#ece6d7; }
+  .status{
+    margin-top:8px;
+    font-size:13px;
+    color:var(--ink-soft);
+    min-height:20px;
+  }
+  .footer{
+    margin-top:18px;
+    font-size:12px;
+    color:var(--ink-faint);
+  }
+  .helper{
+    margin-top:12px;
+    font-size:12px;
+    color:var(--ink-faint);
+    line-height:1.5;
+  }
+  .helper code{ background:#f4f1e8; padding:2px 5px; border-radius:6px; }
+  .signin-note{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:18px;
+    padding:12px 14px;
+    border-radius:14px;
+    background:var(--cream);
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    font-size:12px;
+  }
+  .signin-note strong{ color:var(--pine); }
+  @media (max-width: 920px){
+    .login-shell{ grid-template-columns:1fr; }
+    .hero{ min-height:auto; }
+    .hero-copy h1{ font-size:36px; }
+  }
+  @media (max-width: 540px){
+    body{ padding:12px; }
+    .hero,.panel{ border-radius:20px; }
+    .hero,.panel{ padding:22px; }
+    .hero-copy h1{ font-size:30px; }
+    .panel h2{ font-size:24px; }
+    .hero-card{ max-width:none; }
+  }
+</style>
+</head>
+<body>
+  <div class="login-shell">
+    <section class="hero">
+      <div>
+        <div class="brand">
+          <div class="brand-mark">స</div>
+          <div>
+            <div class="brand-name">Swadeshi Natural<br>Products</div>
+            <div class="brand-sub">Admin access</div>
+          </div>
+        </div>
+        <div class="hero-copy">
+          <h1>Sign in to manage the store.</h1>
+          <p>Use the admin login to edit products, update prices and discounts, manage stock, and keep the storefront in sync with the backend.</p>
+          <div class="hero-card">
+            <div class="mini-title">Store control center</div>
+            <div class="mini-row"><span class="mini-dot"></span><div class="mini-text">Add Amazon-style products with images, discounts, delivery details, and multiple variants.</div></div>
+            <div class="mini-row"><span class="mini-dot"></span><div class="mini-text">Changes flow into the storefront, dashboard, and order tracking.</div></div>
+          </div>
+          <div class="hero-bullets">
+            <div class="bullet"><span class="bullet-dot"></span>Secure admin session with cookie-based auth</div>
+            <div class="bullet"><span class="bullet-dot"></span>Same product data powers both storefront and admin</div>
+            <div class="bullet"><span class="bullet-dot"></span>Save, edit, delete, and publish products from one place</div>
+          </div>
+        </div>
+      </div>
+      <div class="footer">Swadeshi Natural Products admin portal</div>
+    </section>
+
+    <section class="panel">
+      <h2>Admin Login</h2>
+      <p>Enter your admin credentials to continue.</p>
+      <div class="signin-note"><strong>Tip:</strong> This page is protected by the backend session. After login, you land in the admin console automatically.</div>
+      <form id="login-form">
+        <div class="field">
+          <label for="username">Username</label>
+          <input id="username" name="username" autocomplete="username" required placeholder="admin">
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Password">
+        </div>
+        <div class="actions">
+          <button class="primary" type="submit">Sign in</button>
+          <button class="secondary" type="button" id="back-home-btn">Go to storefront</button>
+        </div>
+        <div class="status" id="login-status"></div>
+        <div class="helper">Default local credentials: <code>admin</code> / <code>swadeshi123</code>. You can change them with environment variables <code>ADMIN_USERNAME</code> and <code>ADMIN_PASSWORD</code>.</div>
+      </form>
+    </section>
+  </div>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const statusEl = document.getElementById('login-status');
+    document.getElementById('back-home-btn').addEventListener('click', function(){
+      window.location.href = '/';
+    });
+    form.addEventListener('submit', async function(event){
+      event.preventDefault();
+      statusEl.textContent = 'Signing in...';
+      const payload = { username: form.username.value.trim(), password: form.password.value };
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Login failed');
+        window.location.href = '/admin.html';
+      } catch (error) {
+        statusEl.textContent = error.message || 'Login failed';
+      }
+    });
+  </script>
+</body>
+</html>
