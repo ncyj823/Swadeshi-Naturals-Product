@@ -1135,7 +1135,7 @@
         </div>
       </div>
       <div class="prod-card">
-        <div class="prod-img"><img src="images/image-2.png" alt="White Sesame Oil" /></div>
+        <div class="prod-img"><img src="images/image-7.png" alt="White Sesame Oil" /></div>
         <div class="prod-info">
           <div class="prod-name">White Sesame Oil</div>
           <div class="prod-sub">White Sesame Oil</div>
@@ -1734,6 +1734,7 @@
 
   async function loadProducts() {
     try {
+      throw new Error('skip api');
       const response = await fetch(API_BASE + '/api/products');
       if (!response.ok) throw new Error('Failed to load products');
       const data = await response.json();
