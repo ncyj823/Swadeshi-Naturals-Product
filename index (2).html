@@ -1022,6 +1022,125 @@
     }
   }
 </style>
+<style>
+/* ===== CHECKOUT MODAL ===== */
+.checkout-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 2000;
+  display: none; align-items: center; justify-content: center;
+}
+.checkout-overlay.open { display: flex; }
+
+.checkout-modal {
+  background: white;
+  border-radius: 12px;
+  width: 480px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+
+.checkout-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; background: white; z-index: 1;
+}
+.checkout-header h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 700; color: var(--brown-dark);
+}
+.checkout-close {
+  background: none; border: none; font-size: 22px;
+  color: var(--text-muted); cursor: pointer; line-height: 1;
+}
+.checkout-close:hover { color: #e74c3c; }
+
+.checkout-body { padding: 24px; }
+
+.checkout-order-summary {
+  background: var(--cream); border-radius: 8px;
+  padding: 14px 16px; margin-bottom: 20px;
+  font-size: 13px; color: var(--text-mid);
+}
+.checkout-order-summary .summary-title {
+  font-weight: 700; color: var(--brown-dark); margin-bottom: 8px; font-size: 13px;
+}
+.summary-item {
+  display: flex; justify-content: space-between;
+  padding: 4px 0; border-bottom: 1px solid var(--border);
+}
+.summary-item:last-child { border-bottom: none; }
+.summary-total {
+  display: flex; justify-content: space-between;
+  font-weight: 700; color: var(--brown-dark);
+  font-size: 15px; margin-top: 10px; padding-top: 10px;
+  border-top: 2px solid var(--border);
+}
+
+.co-field { margin-bottom: 16px; }
+.co-field label {
+  display: block; font-size: 11px; font-weight: 700;
+  color: var(--text-muted); margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.co-field input, .co-field textarea {
+  width: 100%; padding: 11px 14px;
+  border: 1.5px solid var(--border); border-radius: 6px;
+  font-size: 13px; font-family: inherit; color: var(--text-dark);
+  outline: none; transition: border 0.2s;
+}
+.co-field input:focus, .co-field textarea:focus { border-color: var(--brown-accent); }
+.co-field textarea { resize: vertical; min-height: 80px; }
+.co-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.checkout-footer {
+  padding: 16px 24px; border-top: 1px solid var(--border);
+  display: flex; gap: 10px;
+}
+.btn-place-order {
+  flex: 1; background: var(--green-cta); color: white;
+  padding: 13px; border-radius: 6px; border: none;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: background 0.2s;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.btn-place-order:hover { background: var(--green-cta-hover); }
+.btn-place-order:disabled { background: var(--text-muted); cursor: not-allowed; }
+.btn-back-cart {
+  padding: 13px 18px; background: transparent;
+  border: 1.5px solid var(--border); border-radius: 6px;
+  font-size: 13px; font-weight: 600; color: var(--text-mid);
+  cursor: pointer; font-family: inherit; transition: all 0.2s;
+}
+.btn-back-cart:hover { background: var(--cream); }
+
+/* Success screen */
+.checkout-success {
+  text-align: center; padding: 48px 24px;
+}
+.checkout-success .success-icon { font-size: 56px; margin-bottom: 16px; }
+.checkout-success h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; font-weight: 700; color: var(--brown-dark); margin-bottom: 10px;
+}
+.checkout-success p { font-size: 14px; color: var(--text-mid); line-height: 1.7; margin-bottom: 6px; }
+.checkout-success .order-id-badge {
+  display: inline-block; background: var(--cream);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px 18px; font-size: 13px; font-weight: 700;
+  color: var(--brown-dark); margin: 14px 0;
+}
+.btn-continue-shopping {
+  display: inline-block; margin-top: 10px;
+  background: var(--brown-dark); color: white;
+  padding: 12px 28px; border-radius: 6px; border: none;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px;
+}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -1419,7 +1538,7 @@
       <span>Total:</span>
       <span id="cartTotal" style="color:var(--brown-dark);">₹0.00</span>
     </div>
-    <button style="width:100%;background:var(--green-cta);color:white;padding:12px;border-radius:6px;font-weight:600;font-size:14px;cursor:pointer;border:none;">Proceed to Checkout</button>
+    <button onclick="openCheckout()" style="width:100%;background:var(--green-cta);color:white;padding:12px;border-radius:6px;font-weight:600;font-size:14px;cursor:pointer;border:none;">Proceed to Checkout →</button>
   </div>
 </div>
 
@@ -1811,6 +1930,186 @@
   });
 </script>
 
+<!-- ══════════════════════════════════════
+     CHECKOUT MODAL
+══════════════════════════════════════ -->
+<div class="checkout-overlay" id="checkoutOverlay">
+  <div class="checkout-modal" id="checkoutModal">
+
+    <!-- Form View -->
+    <div id="checkoutForm">
+      <div class="checkout-header">
+        <h3>Complete Your Order</h3>
+        <button class="checkout-close" onclick="closeCheckout()">✕</button>
+      </div>
+
+      <div class="checkout-body">
+        <!-- Order Summary -->
+        <div class="checkout-order-summary">
+          <div class="summary-title">🛒 Order Summary</div>
+          <div id="checkoutSummaryItems"></div>
+          <div class="summary-total">
+            <span>Total</span>
+            <span id="checkoutSummaryTotal">₹0.00</span>
+          </div>
+        </div>
+
+        <!-- Customer Details -->
+        <div class="co-field-row">
+          <div class="co-field">
+            <label>Full Name *</label>
+            <input type="text" id="co-name" placeholder="Your full name" />
+          </div>
+          <div class="co-field">
+            <label>Phone Number *</label>
+            <input type="tel" id="co-phone" placeholder="10-digit mobile number" />
+          </div>
+        </div>
+        <div class="co-field">
+          <label>Email Address</label>
+          <input type="email" id="co-email" placeholder="Optional — for order confirmation" />
+        </div>
+        <div class="co-field">
+          <label>Delivery Address *</label>
+          <textarea id="co-address" placeholder="House/Flat No, Street, Area, City, Pincode"></textarea>
+        </div>
+        <div class="co-field">
+          <label>Special Instructions</label>
+          <input type="text" id="co-notes" placeholder="Optional — any special instructions" />
+        </div>
+      </div>
+
+      <div class="checkout-footer">
+        <button class="btn-back-cart" onclick="closeCheckout()">← Back</button>
+        <button class="btn-place-order" id="placeOrderBtn" onclick="placeOrder()">
+          Place Order →
+        </button>
+      </div>
+    </div>
+
+    <!-- Success View (hidden initially) -->
+    <div id="checkoutSuccess" style="display:none;">
+      <div class="checkout-success">
+        <div class="success-icon">🎉</div>
+        <h3>Order Placed Successfully!</h3>
+        <p>Thank you for shopping with Swadeshi Natural Products.</p>
+        <p>We'll contact you shortly to confirm your order.</p>
+        <div class="order-id-badge" id="successOrderId"></div>
+        <p style="font-size:12px;color:var(--text-muted);">
+          📞 Office Timing: 9:00 AM – 8:00 PM<br>
+          🚚 Free delivery on orders above ₹499
+        </p>
+        <button class="btn-continue-shopping" onclick="finishCheckout()">
+          Continue Shopping
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// SUPABASE CONNECTION
+// ══════════════════════════════════════
+const SUPABASE_URL      = "PASTE_YOUR_PROJECT_URL_HERE";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_PUBLIC_KEY_HERE";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ══════════════════════════════════════
+// CHECKOUT FUNCTIONS
+// ══════════════════════════════════════
+function openCheckout() {
+  const items = cartManager.getCartItems();
+  if (!items.length) return;
+
+  // Populate summary
+  document.getElementById('checkoutSummaryItems').innerHTML = items.map(item => `
+    <div class="summary-item">
+      <span>${escapeHtml(item.title)} × ${item.quantity}</span>
+      <span>₹${(item.price * item.quantity).toFixed(2)}</span>
+    </div>
+  `).join('');
+  document.getElementById('checkoutSummaryTotal').textContent = `₹${cartManager.getTotal().toFixed(2)}`;
+
+  // Reset form
+  document.getElementById('checkoutForm').style.display = 'block';
+  document.getElementById('checkoutSuccess').style.display = 'none';
+  ['co-name','co-phone','co-email','co-address','co-notes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+
+  // Show overlay
+  document.getElementById('checkoutOverlay').classList.add('open');
+  cartManager.closeDrawer();
+}
+
+function closeCheckout() {
+  document.getElementById('checkoutOverlay').classList.remove('open');
+}
+
+// Close on backdrop click
+document.getElementById('checkoutOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeCheckout();
+});
+
+async function placeOrder() {
+  const name    = document.getElementById('co-name').value.trim();
+  const phone   = document.getElementById('co-phone').value.trim();
+  const email   = document.getElementById('co-email').value.trim();
+  const address = document.getElementById('co-address').value.trim();
+  const notes   = document.getElementById('co-notes').value.trim();
+
+  // Validation
+  if (!name) { alert('Please enter your full name.'); document.getElementById('co-name').focus(); return; }
+  if (!phone || phone.length < 10) { alert('Please enter a valid 10-digit phone number.'); document.getElementById('co-phone').focus(); return; }
+  if (!address) { alert('Please enter your delivery address.'); document.getElementById('co-address').focus(); return; }
+
+  const items = cartManager.getCartItems();
+  const total = cartManager.getTotal();
+
+  const btn = document.getElementById('placeOrderBtn');
+  btn.disabled = true;
+  btn.textContent = 'Placing Order...';
+
+  try {
+    const itemsText = items.map(i => `${i.title} x${i.quantity} @ ₹${i.price}`).join(', ');
+
+    const { data, error } = await db.from('orders').insert([{
+      customer_name:  name,
+      customer_email: email || null,
+      customer_phone: phone,
+      items:          itemsText,
+      total_price:    total,
+      status:         'Pending',
+      notes:          notes || null,
+      delivery_address: address
+    }]).select();
+
+    if (error) throw error;
+
+    // Success!
+    const orderId = data?.[0]?.id ? `#ORD-${String(data[0].id).padStart(3,'0')}` : '#ORD-NEW';
+    document.getElementById('successOrderId').textContent = `Order ID: ${orderId}`;
+    document.getElementById('checkoutForm').style.display = 'none';
+    document.getElementById('checkoutSuccess').style.display = 'block';
+
+    // Clear cart
+    cartManager.cart = {};
+    cartManager.saveCart();
+
+  } catch (err) {
+    console.error('Order failed:', err);
+    alert('Something went wrong. Please try again or call us directly.');
+    btn.disabled = false;
+    btn.textContent = 'Place Order →';
+  }
+}
+
+function finishCheckout() {
+  closeCheckout();
+}
+</script>
 
 </body>
 </html>
