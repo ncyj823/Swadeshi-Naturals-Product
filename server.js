@@ -121,13 +121,38 @@ function normalizeProduct(input) {
 }
 
 function normalizeOrder(input) {
+  const itemDetails = Array.isArray(input.itemDetails) ? input.itemDetails : [];
+  const address = String(input.address || input.locality || '');
   return {
-    id: String(input.id || `ORD-${Date.now()}`),
-    customer: String(input.customer || 'Customer'),
-    locality: String(input.locality || ''),
-    items: Number(input.items || 0),
-    amount: Number(input.amount || 0),
-    status: String(input.status || 'Pending')
+    id: String(input.id || `SWD-${Date.now().toString().slice(-6)}`),
+    customer: String(input.customer || input.customer_name || input.name || 'Customer'),
+    customerPhone: String(input.customerPhone || input.customer_phone || input.phone || ''),
+    customerEmail: String(input.customerEmail || input.customer_email || input.email || ''),
+    locality: String(input.locality || address.split(',')[0] || ''),
+    address,
+    notes: String(input.notes || ''),
+    items: Number(input.items || itemDetails.reduce((sum, item) => sum + Number(item.quantity || 0), 0) || 0),
+    itemDetails,
+    amount: Number(input.amount || input.total_price || input.total || 0),
+    paymentStatus: String(input.paymentStatus || 'Completed'),
+    status: String(input.status || 'Paid'),
+    createdAt: String(input.createdAt || new Date().toISOString())
+  };
+}
+
+function publicOrder(order) {
+  return {
+    id: order.id,
+    customer: order.customer,
+    customerPhone: order.customerPhone,
+    locality: order.locality,
+    address: order.address,
+    items: order.items,
+    itemDetails: order.itemDetails || [],
+    amount: order.amount,
+    paymentStatus: order.paymentStatus || 'Completed',
+    status: order.status || 'Paid',
+    createdAt: order.createdAt || ''
   };
 }
 
@@ -281,6 +306,31 @@ const server = http.createServer(async (req, res) => {
       db.products = (db.products || []).filter((product) => product.id !== id);
       await writeDb(db);
       return sendJson(res, 200, { ok: true });
+    }
+
+    if (pathname === '/api/orders' && req.method === 'POST') {
+      const body = await readBody(req);
+      const db = await readDb();
+      db.orders = db.orders || [];
+      const order = normalizeOrder(body);
+      db.orders.unshift(order);
+      await writeDb(db);
+      return sendJson(res, 201, { ok: true, order: publicOrder(order) });
+    }
+
+    if (pathname === '/api/orders/track' && req.method === 'GET') {
+      const query = String(requestUrl.searchParams.get('q') || '').trim().toLowerCase();
+      if (!query) return sendJson(res, 400, { error: 'Order ID or phone number is required' });
+      const digits = query.replace(/\D/g, '');
+      const db = await readDb();
+      const matches = (db.orders || []).filter((order) => {
+        const normalizedId = String(order.id || '').toLowerCase();
+        const idMatch = normalizedId === query || normalizedId.includes(query.replace(/^#/, ''));
+        const phoneDigits = String(order.customerPhone || order.phone || '').replace(/\D/g, '');
+        const phoneMatch = digits.length >= 4 && phoneDigits.endsWith(digits);
+        return idMatch || phoneMatch;
+      }).map(publicOrder);
+      return sendJson(res, 200, { ok: true, orders: matches });
     }
 
     if (pathname === '/api/orders' && req.method === 'GET') {

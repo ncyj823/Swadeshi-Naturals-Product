@@ -1646,6 +1646,7 @@ body { perspective: 1200px; }
 <script>
   const API_BASE = '';
   const CART_STORAGE_KEY = 'swadeshi_cart';
+  const PRODUCTS_STORAGE_KEY = 'swadeshi_products';
 
 
   // CODEx: language and page interactions
@@ -2017,35 +2018,54 @@ body { perspective: 1200px; }
   // Initialize cart manager
   let cartManager;
 
-  async function loadProducts() {
+  function loadStoredProducts() {
     try {
-      throw new Error('skip api');
-      const response = await fetch(API_BASE + '/api/products');
-      if (!response.ok) throw new Error('Failed to load products');
-      const data = await response.json();
-      cachedProducts = (data || []).map(normalizeProduct);
-      renderProducts(cachedProducts);
+      const stored = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY) || '[]');
+      return Array.isArray(stored) ? stored.map(normalizeProduct) : [];
     } catch (error) {
-      console.error('API error, trying fallback:', error);
-      // Fallback to db.json if API fails
+      console.warn('Stored products unavailable:', error);
+      return [];
+    }
+  }
+
+  async function loadProducts() {
+    const sources = [
+      async () => {
+        if (window.location.protocol === 'file:') throw new Error('API unavailable from file view');
+        const response = await fetch(API_BASE + '/api/products', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Failed to load API products');
+        return await response.json();
+      },
+      async () => {
+        const response = await fetch('data/db.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Failed to load local product data');
+        const data = await response.json();
+        return data.products || [];
+      },
+      async () => loadStoredProducts()
+    ];
+
+    for (const source of sources) {
       try {
-        const fallbackResponse = await fetch('data/db.json');
-        if (fallbackResponse.ok) {
-          const fallbackData = await fallbackResponse.json();
-          cachedProducts = (fallbackData.products || []).map(normalizeProduct);
+        const products = (await source()).map(normalizeProduct).filter(product => product.active !== false);
+        if (products.length) {
+          cachedProducts = products;
           renderProducts(cachedProducts);
+          return;
         }
-      } catch (fallbackError) {
-        console.error('Fallback failed:', fallbackError);
-        renderProducts([]);
+      } catch (error) {
+        console.warn('Product source unavailable:', error.message || error);
       }
     }
+
+    // Keep the hand-coded cards visible if every dynamic source fails.
+    cachedProducts = [];
   }
 
   function renderProducts(products) {
     const activeProducts = products.filter(product => product.active !== false);
-    const featuredProducts = activeProducts.filter(product => product.featured).slice(0, 4);
-    const bestSellerProducts = activeProducts.slice(0, 6);
+    const featuredProducts = activeProducts.filter(product => product.featured).slice(0, 8);
+    const bestSellerProducts = activeProducts;
 
     const featuredRow = document.querySelector('.featured-row');
     if (featuredRow) {

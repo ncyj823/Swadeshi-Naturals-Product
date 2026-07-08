@@ -16,7 +16,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Hand pounded pulse blend.",
       "image": "images/image-10.png",
-      "images": ["images/image-10.png"],
+      "images": [
+        "images/image-10.png"
+      ],
       "color": "#c9a23d",
       "initials": "KP",
       "featured": true,
@@ -38,7 +40,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Unpolished red gram.",
       "image": "images/image-11.png",
-      "images": ["images/image-11.png"],
+      "images": [
+        "images/image-11.png"
+      ],
       "color": "#a9742f",
       "initials": "RG",
       "featured": true,
@@ -60,7 +64,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Polished moong dal.",
       "image": "images/image-12.png",
-      "images": ["images/image-12.png"],
+      "images": [
+        "images/image-12.png"
+      ],
       "color": "#d4b13c",
       "initials": "MD",
       "featured": true,
@@ -82,7 +88,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Unpolished moong dal.",
       "image": "images/image-13.png",
-      "images": ["images/image-13.png"],
+      "images": [
+        "images/image-13.png"
+      ],
       "color": "#7f9a4a",
       "initials": "MD",
       "featured": true,
@@ -104,7 +112,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Traditional toor dal.",
       "image": "images/image-14.png",
-      "images": ["images/image-14.png"],
+      "images": [
+        "images/image-14.png"
+      ],
       "color": "#8a5a2e",
       "initials": "TD",
       "featured": false,
@@ -126,7 +136,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Traditional chana dal.",
       "image": "images/image-15.png",
-      "images": ["images/image-15.png"],
+      "images": [
+        "images/image-15.png"
+      ],
       "color": "#c79a3a",
       "initials": "CD",
       "featured": false,
@@ -148,7 +160,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Whole urad dal.",
       "image": "images/image-10.png",
-      "images": ["images/image-10.png"],
+      "images": [
+        "images/image-10.png"
+      ],
       "color": "#52453a",
       "initials": "UD",
       "featured": false,
@@ -170,7 +184,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Cold pressed groundnut oil.",
       "image": "images/image-11.png",
-      "images": ["images/image-11.png"],
+      "images": [
+        "images/image-11.png"
+      ],
       "color": "#c79029",
       "initials": "GO",
       "featured": true,
@@ -192,7 +208,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Cold pressed sesame oil.",
       "image": "images/image-12.png",
-      "images": ["images/image-12.png"],
+      "images": [
+        "images/image-12.png"
+      ],
       "color": "#8c5b1f",
       "initials": "SO",
       "featured": true,
@@ -214,7 +232,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Cold pressed coconut oil.",
       "image": "images/image-13.png",
-      "images": ["images/image-13.png"],
+      "images": [
+        "images/image-13.png"
+      ],
       "color": "#cdb98b",
       "initials": "CO",
       "featured": false,
@@ -236,7 +256,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Herbal face wash.",
       "image": "images/image-14.png",
-      "images": ["images/image-14.png"],
+      "images": [
+        "images/image-14.png"
+      ],
       "color": "#6f8f4e",
       "initials": "FW",
       "featured": false,
@@ -258,7 +280,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Cold pressed hair oil.",
       "image": "images/image-15.png",
-      "images": ["images/image-15.png"],
+      "images": [
+        "images/image-15.png"
+      ],
       "color": "#4f6b3a",
       "initials": "HO",
       "featured": false,
@@ -280,7 +304,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Ragi breakfast mix.",
       "image": "images/image-10.png",
-      "images": ["images/image-10.png"],
+      "images": [
+        "images/image-10.png"
+      ],
       "color": "#7d4e2c",
       "initials": "RM",
       "featured": false,
@@ -302,7 +328,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Dosa instant mix.",
       "image": "images/image-11.png",
-      "images": ["images/image-11.png"],
+      "images": [
+        "images/image-11.png"
+      ],
       "color": "#caa24f",
       "initials": "DM",
       "featured": false,
@@ -324,7 +352,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Sambar powder.",
       "image": "images/image-12.png",
-      "images": ["images/image-12.png"],
+      "images": [
+        "images/image-12.png"
+      ],
       "color": "#b5571f",
       "initials": "SP",
       "featured": false,
@@ -346,7 +376,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Mango pickle.",
       "image": "images/image-13.png",
-      "images": ["images/image-13.png"],
+      "images": [
+        "images/image-13.png"
+      ],
       "color": "#caa429",
       "initials": "MP",
       "featured": false,
@@ -368,7 +400,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Idli ready mix.",
       "image": "images/image-14.png",
-      "images": ["images/image-14.png"],
+      "images": [
+        "images/image-14.png"
+      ],
       "color": "#e3d6a8",
       "initials": "IM",
       "featured": false,
@@ -390,7 +424,9 @@
       "delivery": "Delivery in 2-4 days",
       "description": "Roasted makhana snack.",
       "image": "images/image-15.png",
-      "images": ["images/image-15.png"],
+      "images": [
+        "images/image-15.png"
+      ],
       "color": "#d8c98f",
       "initials": "RM",
       "featured": false,
@@ -398,28 +434,166 @@
     }
   ],
   "orders": [
-    { "id": "SWD-2206", "customer": "Lakshmi Narayana", "locality": "Kukatpally", "items": 3, "amount": 1840, "status": "Paid" },
-    { "id": "SWD-2205", "customer": "Venkat Rao", "locality": "Secunderabad", "items": 1, "amount": 620, "status": "COD" },
-    { "id": "SWD-2204", "customer": "Anitha Reddy", "locality": "Madhapur", "items": 4, "amount": 2150, "status": "Paid" },
-    { "id": "SWD-2203", "customer": "Suresh Babu", "locality": "Dilsukhnagar", "items": 1, "amount": 430, "status": "Pending" },
-    { "id": "SWD-2202", "customer": "Padma Priya", "locality": "Banjara Hills", "items": 2, "amount": 990, "status": "Paid" },
-    { "id": "SWD-2201", "customer": "Krishna Murthy", "locality": "Uppal", "items": 2, "amount": 560, "status": "Dispatched" },
-    { "id": "SWD-2200", "customer": "Sandhya Rani", "locality": "Jubilee Hills", "items": 5, "amount": 2780, "status": "Paid" },
-    { "id": "SWD-2199", "customer": "Mahesh Kumar", "locality": "LB Nagar", "items": 1, "amount": 250, "status": "COD" },
-    { "id": "SWD-2198", "customer": "Vijaya Lakshmi", "locality": "Trimulgherry", "items": 3, "amount": 1340, "status": "Dispatched" },
-    { "id": "SWD-2197", "customer": "Ramesh Chandra", "locality": "Bowenpally", "items": 2, "amount": 710, "status": "Pending" },
-    { "id": "SWD-2196", "customer": "Sunitha Devi", "locality": "Kukatpally", "items": 6, "amount": 3120, "status": "Paid" },
-    { "id": "SWD-2195", "customer": "Anil Kumar Reddy", "locality": "Madhapur", "items": 1, "amount": 380, "status": "COD" }
+    {
+      "id": "SWD-2206",
+      "customer": "Lakshmi Narayana",
+      "locality": "Kukatpally",
+      "items": 3,
+      "amount": 1840,
+      "status": "Paid"
+    },
+    {
+      "id": "SWD-2205",
+      "customer": "Venkat Rao",
+      "locality": "Secunderabad",
+      "items": 1,
+      "amount": 620,
+      "status": "Paid"
+    },
+    {
+      "id": "SWD-2204",
+      "customer": "Anitha Reddy",
+      "locality": "Madhapur",
+      "items": 4,
+      "amount": 2150,
+      "status": "Paid"
+    },
+    {
+      "id": "SWD-2203",
+      "customer": "Suresh Babu",
+      "locality": "Dilsukhnagar",
+      "items": 1,
+      "amount": 430,
+      "status": "Pending"
+    },
+    {
+      "id": "SWD-2202",
+      "customer": "Padma Priya",
+      "locality": "Banjara Hills",
+      "items": 2,
+      "amount": 990,
+      "status": "Paid"
+    },
+    {
+      "id": "SWD-2201",
+      "customer": "Krishna Murthy",
+      "locality": "Uppal",
+      "items": 2,
+      "amount": 560,
+      "status": "Dispatched"
+    },
+    {
+      "id": "SWD-2200",
+      "customer": "Sandhya Rani",
+      "locality": "Jubilee Hills",
+      "items": 5,
+      "amount": 2780,
+      "status": "Paid"
+    },
+    {
+      "id": "SWD-2199",
+      "customer": "Mahesh Kumar",
+      "locality": "LB Nagar",
+      "items": 1,
+      "amount": 250,
+      "status": "COD"
+    },
+    {
+      "id": "SWD-2198",
+      "customer": "Vijaya Lakshmi",
+      "locality": "Trimulgherry",
+      "items": 3,
+      "amount": 1340,
+      "status": "Dispatched"
+    },
+    {
+      "id": "SWD-2197",
+      "customer": "Ramesh Chandra",
+      "locality": "Bowenpally",
+      "items": 2,
+      "amount": 710,
+      "status": "Pending"
+    },
+    {
+      "id": "SWD-2196",
+      "customer": "Sunitha Devi",
+      "locality": "Kukatpally",
+      "items": 6,
+      "amount": 3120,
+      "status": "Paid"
+    },
+    {
+      "id": "SWD-2195",
+      "customer": "Anil Kumar Reddy",
+      "locality": "Madhapur",
+      "items": 1,
+      "amount": 380,
+      "status": "COD"
+    }
   ],
   "customers": [
-    { "name": "Lakshmi Narayana", "loc": "Kukatpally, Hyderabad", "orders": 6, "spend": 9840, "since": "Feb 2025" },
-    { "name": "Venkat Rao", "loc": "Secunderabad", "orders": 2, "spend": 1240, "since": "May 2026" },
-    { "name": "Anitha Reddy", "loc": "Madhapur, Hyderabad", "orders": 9, "spend": 15620, "since": "Nov 2024" },
-    { "name": "Suresh Babu", "loc": "Dilsukhnagar", "orders": 1, "spend": 430, "since": "Jun 2026" },
-    { "name": "Padma Priya", "loc": "Banjara Hills", "orders": 4, "spend": 4120, "since": "Jan 2026" },
-    { "name": "Krishna Murthy", "loc": "Uppal, Hyderabad", "orders": 3, "spend": 1860, "since": "Mar 2026" },
-    { "name": "Sandhya Rani", "loc": "Jubilee Hills", "orders": 11, "spend": 21340, "since": "Aug 2024" },
-    { "name": "Mahesh Kumar", "loc": "LB Nagar", "orders": 1, "spend": 250, "since": "Jun 2026" },
-    { "name": "Vijaya Lakshmi", "loc": "Trimulgherry", "orders": 5, "spend": 6230, "since": "Sep 2025" }
+    {
+      "name": "Lakshmi Narayana",
+      "loc": "Kukatpally, Hyderabad",
+      "orders": 6,
+      "spend": 9840,
+      "since": "Feb 2025"
+    },
+    {
+      "name": "Venkat Rao",
+      "loc": "Secunderabad",
+      "orders": 2,
+      "spend": 1240,
+      "since": "May 2026"
+    },
+    {
+      "name": "Anitha Reddy",
+      "loc": "Madhapur, Hyderabad",
+      "orders": 9,
+      "spend": 15620,
+      "since": "Nov 2024"
+    },
+    {
+      "name": "Suresh Babu",
+      "loc": "Dilsukhnagar",
+      "orders": 1,
+      "spend": 430,
+      "since": "Jun 2026"
+    },
+    {
+      "name": "Padma Priya",
+      "loc": "Banjara Hills",
+      "orders": 4,
+      "spend": 4120,
+      "since": "Jan 2026"
+    },
+    {
+      "name": "Krishna Murthy",
+      "loc": "Uppal, Hyderabad",
+      "orders": 3,
+      "spend": 1860,
+      "since": "Mar 2026"
+    },
+    {
+      "name": "Sandhya Rani",
+      "loc": "Jubilee Hills",
+      "orders": 11,
+      "spend": 21340,
+      "since": "Aug 2024"
+    },
+    {
+      "name": "Mahesh Kumar",
+      "loc": "LB Nagar",
+      "orders": 1,
+      "spend": 250,
+      "since": "Jun 2026"
+    },
+    {
+      "name": "Vijaya Lakshmi",
+      "loc": "Trimulgherry",
+      "orders": 5,
+      "spend": 6230,
+      "since": "Sep 2025"
+    }
   ]
 }

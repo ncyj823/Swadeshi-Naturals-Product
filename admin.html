@@ -1867,6 +1867,7 @@
 
 
       var API_BASE = '';
+      var PRODUCTS_STORAGE_KEY = 'swadeshi_products';
       var categoryNameMap = {
         pulses: 'Hand pounded pulses', oils: 'Cold pressed oils', cosmetic: 'Cosmetic', mixes: 'Ready mixes', readytoeat: 'Ready to eat', breakfast: 'Instant breakfast mixes', snacks: 'Party time snacks'
       };
@@ -1888,12 +1889,18 @@
           console.warn('Using local fallback data:', err.message || err);
         }
       }
+      function rememberProductsLocally() {
+        try { localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products)); }
+        catch (err) { console.warn('Could not cache products locally:', err.message || err); }
+      }
       async function saveProducts() {
+        rememberProductsLocally();
         await fetchJson('/api/products/bulk', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ products: products })
         });
+        rememberProductsLocally();
       }
       async function saveOrderStatus(orderId, status) {
         await fetchJson('/api/orders/' + encodeURIComponent(orderId), {
@@ -2494,6 +2501,7 @@
 
       (async function bootstrapApp() {
         await loadBootstrapData();
+        rememberProductsLocally();
         renderDashboard();
         renderOrders();
         renderProducts();
@@ -2506,3 +2514,4 @@
 </body>
 
 </html>
+
