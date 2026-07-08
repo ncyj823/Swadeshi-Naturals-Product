@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Swadeshi Natural Products â€” Admin</title>
+  <title>Swadeshi Natural Products — Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
     href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&display=swap"
@@ -38,7 +38,7 @@
     }
 
     body {
-      font-family: 'Inter', -apple-system, sans-serif;
+      font-family: 'Poppins', 'Noto Sans Telugu', -apple-system, sans-serif;
       background: var(--parchment);
       color: var(--ink);
       font-size: 14px;
@@ -49,7 +49,7 @@
     h2,
     h3,
     .serif {
-      font-family: 'Lora', Georgia, serif;
+      font-family: 'Playfair Display', 'Noto Sans Telugu', Georgia, serif;
     }
 
     a {
@@ -101,7 +101,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Lora', serif;
+      font-family: 'Playfair Display', 'Noto Sans Telugu', serif;
       font-weight: 700;
       font-size: 16px;
       color: var(--pine);
@@ -109,7 +109,7 @@
     }
 
     .brand-name {
-      font-family: 'Lora', serif;
+      font-family: 'Playfair Display', 'Noto Sans Telugu', serif;
       font-size: 15.5px;
       font-weight: 600;
       color: #fff;
@@ -382,7 +382,7 @@
     }
 
     .ledger-value {
-      font-family: 'Lora', serif;
+      font-family: 'Playfair Display', 'Noto Sans Telugu', serif;
       font-size: 23px;
       font-weight: 600;
       color: var(--ink);
@@ -394,7 +394,7 @@
     .ledger-delta {
       font-size: 11.5px;
       font-weight: 600;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Poppins', 'Noto Sans Telugu', sans-serif;
     }
 
     .delta-up {
@@ -576,7 +576,7 @@
       font-size: 14px;
       color: #fff;
       font-weight: 600;
-      font-family: 'Lora', serif;
+      font-family: 'Playfair Display', 'Noto Sans Telugu', serif;
     }
 
     .prod-name {
@@ -858,7 +858,7 @@
     .cust-stat .v {
       font-weight: 600;
       font-size: 13.5px;
-      font-family: 'Lora', serif;
+      font-family: 'Playfair Display', 'Noto Sans Telugu', serif;
     }
 
     .cust-stat .l {
@@ -1441,7 +1441,7 @@
       <div class="topbar">
         <div class="topbar-title">
           <h1 id="page-title">Dashboard</h1>
-          <div class="date" id="page-subtitle">Saturday, 20 June 2026 Â· Hyderabad warehouse</div>
+          <div class="date" id="page-subtitle">Saturday, 20 June 2026 · Hyderabad warehouse</div>
         </div>
         <div class="topbar-actions">
           <div class="search">
@@ -1490,13 +1490,13 @@
             <div class="ledger-row">
               <div class="ledger-cell">
                 <div class="ledger-label">Orders today</div>
-                <div class="ledger-value">38 <span class="ledger-delta delta-up">â†‘ 12%</span></div>
+                <div class="ledger-value">38 <span class="ledger-delta delta-up">↑ 12%</span></div>
                 <div class="ledger-note">vs. 34 yesterday</div>
               </div>
               <div class="ledger-cell">
                 <div class="ledger-label">Revenue today</div>
-                <div class="ledger-value">â‚¹46,280</div>
-                <div class="ledger-note">avg. order â‚¹1,218</div>
+                <div class="ledger-value">₹46,280</div>
+                <div class="ledger-note">avg. order ₹1,218</div>
               </div>
               <div class="ledger-cell">
                 <div class="ledger-label">Free delivery orders</div>
@@ -1521,8 +1521,8 @@
             <div class="col-main">
               <div class="panel">
                 <div class="panel-head">
-                  <h2>Hand pounded pulses â€” à°šà±‡à°¤à°¿à°¤à±‹ à°µà°¿à°¸à°¿à°°à°¿à°¨ à°ªà°ªà±à°ªà±à°²à±</h2>
-                  <button class="link" data-goto-page="products" data-goto-cat="pulses">View all 18 â†’</button>
+                  <h2>Hand pounded pulses — చేతితో విసిరిన పప్పులు</h2>
+                  <button class="link" data-goto-page="products" data-goto-cat="pulses">View all 18 →</button>
                 </div>
                 <div class="panel-body">
                   <table id="dash-pulses-table">
@@ -1550,7 +1550,7 @@
               <div class="panel">
                 <div class="panel-head">
                   <h2>Recent orders</h2>
-                  <button class="link" data-goto-page="orders">View all â†’</button>
+                  <button class="link" data-goto-page="orders">View all →</button>
                 </div>
                 <div class="panel-body" id="dash-recent-orders"><!-- populated by JS --></div>
               </div>
@@ -1559,7 +1559,7 @@
                 <div class="panel-head">
                   <h2>Needs restocking</h2>
                   <button class="link" data-goto-page="products" data-goto-cat="all" data-goto-filter="low">Order stock
-                    â†’</button>
+                    →</button>
                 </div>
                 <div class="panel-body" id="dash-low-stock"><!-- populated by JS --></div>
               </div>
@@ -1587,11 +1587,11 @@
               <table id="orders-table">
                 <thead>
                   <tr>
-                    <th data-sort="id">Order <span class="sort-arrow">â†•</span></th>
-                    <th data-sort="customer">Customer <span class="sort-arrow">â†•</span></th>
-                    <th data-sort="locality">Locality <span class="sort-arrow">â†•</span></th>
+                    <th data-sort="id">Order <span class="sort-arrow">↕</span></th>
+                    <th data-sort="customer">Customer <span class="sort-arrow">↕</span></th>
+                    <th data-sort="locality">Locality <span class="sort-arrow">↕</span></th>
                     <th data-sort="items">Items</th>
-                    <th class="right" data-sort="amount">Amount <span class="sort-arrow">â†•</span></th>
+                    <th class="right" data-sort="amount">Amount <span class="sort-arrow">↕</span></th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -1612,7 +1612,7 @@
           <div class="panel">
             <div class="panel-head">
               <h2>Customers</h2>
-              <span class="muted" style="font-size:12px;">26 total Â· 9 repeat buyers</span>
+              <span class="muted" style="font-size:12px;">26 total · 9 repeat buyers</span>
             </div>
             <div class="panel-body pad">
               <div class="cust-grid" id="customers-grid"><!-- populated by JS --></div>
@@ -1638,10 +1638,10 @@
               <table id="products-table">
                 <thead>
                   <tr>
-                    <th data-sort="name">Product <span class="sort-arrow">â†•</span></th>
+                    <th data-sort="name">Product <span class="sort-arrow">↕</span></th>
                     <th>SKU</th>
-                    <th class="right" data-sort="price">Price <span class="sort-arrow">â†•</span></th>
-                    <th class="right" data-sort="stock">Stock <span class="sort-arrow">â†•</span></th>
+                    <th class="right" data-sort="price">Price <span class="sort-arrow">↕</span></th>
+                    <th class="right" data-sort="stock">Stock <span class="sort-arrow">↕</span></th>
                     <th>Status</th>
                     <th></th>
                   </tr>
@@ -1688,7 +1688,7 @@
                       <div class="prod-name">Hyderabad core</div>
                     </td>
                     <td class="muted">Banjara Hills, Jubilee Hills, Madhapur, Kukatpally</td>
-                    <td class="right num">â‚¹500</td>
+                    <td class="right num">₹500</td>
                     <td class="right num">Same day</td>
                   </tr>
                   <tr>
@@ -1696,7 +1696,7 @@
                       <div class="prod-name">Secunderabad</div>
                     </td>
                     <td class="muted">Secunderabad, Trimulgherry, Bowenpally</td>
-                    <td class="right num">â‚¹500</td>
+                    <td class="right num">₹500</td>
                     <td class="right num">Same day</td>
                   </tr>
                   <tr>
@@ -1704,16 +1704,16 @@
                       <div class="prod-name">Greater Hyderabad</div>
                     </td>
                     <td class="muted">Dilsukhnagar, LB Nagar, Uppal</td>
-                    <td class="right num">â‚¹800</td>
-                    <td class="right num">1â€“2 days</td>
+                    <td class="right num">₹800</td>
+                    <td class="right num">1–2 days</td>
                   </tr>
                   <tr>
                     <td>
                       <div class="prod-name">Rest of city</div>
                     </td>
                     <td class="muted">Via courier partner</td>
-                    <td class="right num">Not free â€” courier charges apply</td>
-                    <td class="right num">2â€“4 days</td>
+                    <td class="right num">Not free — courier charges apply</td>
+                    <td class="right num">2–4 days</td>
                   </tr>
                 </tbody>
               </table>
@@ -1754,7 +1754,7 @@
                 <tbody>
                   <tr>
                     <td style="padding:9px 0; color:var(--ink-faint); width:200px;">Office timing</td>
-                    <td style="padding:9px 0;">9:00 AM â€“ 8:00 PM</td>
+                    <td style="padding:9px 0;">9:00 AM – 8:00 PM</td>
                   </tr>
                   <tr>
                     <td style="padding:9px 0; color:var(--ink-faint);">Free delivery</td>
@@ -1766,7 +1766,7 @@
                   </tr>
                   <tr>
                     <td style="padding:9px 0; color:var(--ink-faint);">Currency</td>
-                    <td style="padding:9px 0;">INR (â‚¹)</td>
+                    <td style="padding:9px 0;">INR (₹)</td>
                   </tr>
                 </tbody>
               </table>
@@ -1845,24 +1845,24 @@
       /* ===================== SHARED DATA ===================== */
 
       var products = [
-        { id: 'SWD-KP-001', name: 'Polished Kandi Pappu', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'à°ªà°¾à°²à°¿à°·à± à°šà±‡à°¸à°¿à°¨ à°•à°‚à°¦à°¿ à°ªà°ªà±à°ªà± Â· 1 kg', price: 250, stock: 34, color: '#c9a23d', initials: 'KP' },
-        { id: 'SWD-RG-014', name: 'Unpolished Red Gram', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'à°•à°‚à°¦à°¿à°ªà°ªà±à°ªà± à°…à°¨à±â€Œà°ªà°¾à°²à°¿à°·à±à°¡à± Â· 1 kg', price: 250, stock: 7, color: '#a9742f', initials: 'RG' },
-        { id: 'SWD-MD-009', name: 'Polished Moong Dall', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'à°ªà°¾à°²à°¿à°·à± à°šà±‡à°¸à°¿à°¨ à°ªà±†à°¸à°° à°ªà°ªà±à°ªà± Â· 1 kg', price: 220, stock: 58, color: '#d4b13c', initials: 'MD' },
-        { id: 'SWD-MD-010', name: 'Unpolished Moong Dall', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'à°ªà°¾à°²à°¿à°·à± à°šà±‡à°¯à°¨à°¿ à°ªà±†à°¸à°° à°ªà°ªà±à°ªà± Â· 1 kg', price: 220, stock: 0, color: '#7f9a4a', initials: 'MD' },
-        { id: 'SWD-TD-002', name: 'Hand Pounded Toor Dal', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'à°šà±‡à°¤à°¿à°¤à±‹ à°¦à°‚à°šà°¿à°¨ à°•à°‚à°¦à°¿ à°ªà°ªà±à°ªà± Â· 500 g', price: 140, stock: 21, color: '#8a5a2e', initials: 'TD' },
-        { id: 'SWD-CG-006', name: 'Hand Pounded Chana Dal', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'à°¶à°¨à°— à°ªà°ªà±à°ªà± Â· 1 kg', price: 180, stock: 26, color: '#c79a3a', initials: 'CD' },
-        { id: 'SWD-UD-011', name: 'Urad Dal Whole', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'à°®à°¿à°¨à±à°®à±à°²à± Â· 500 g', price: 130, stock: 19, color: '#52453a', initials: 'UD' },
-        { id: 'SWD-GO-021', name: 'Cold Pressed Groundnut Oil', cat: 'oils', catLabel: 'Cold pressed oils', telugu: 'à°µà±‡à°°à±à°¶à±†à°¨à°— à°¨à±‚à°¨à±† Â· 1 L', price: 320, stock: 5, color: '#c79029', initials: 'GO' },
-        { id: 'SWD-SO-022', name: 'Cold Pressed Sesame Oil', cat: 'oils', catLabel: 'Cold pressed oils', telugu: 'à°¨à±à°µà±à°µà±à°² à°¨à±‚à°¨à±† Â· 1 L', price: 380, stock: 14, color: '#8c5b1f', initials: 'SO' },
-        { id: 'SWD-CO-023', name: 'Cold Pressed Coconut Oil', cat: 'oils', catLabel: 'Cold pressed oils', telugu: 'à°•à±Šà°¬à±à°¬à°°à°¿ à°¨à±‚à°¨à±† Â· 1 L', price: 340, stock: 22, color: '#cdb98b', initials: 'CO' },
-        { id: 'SWD-FW-031', name: 'Herbal Face Wash', cat: 'cosmetic', catLabel: 'Cosmetic', telugu: 'à°®à±‚à°²à°¿à°•à°¾ à°«à±‡à°¸à± à°µà°¾à°·à± Â· 100 ml', price: 160, stock: 31, color: '#6f8f4e', initials: 'FW' },
-        { id: 'SWD-HO-032', name: 'Cold Pressed Hair Oil', cat: 'cosmetic', catLabel: 'Cosmetic', telugu: 'à°•à±‡à°¶ à°¤à±ˆà°²à°‚ Â· 200 ml', price: 240, stock: 17, color: '#4f6b3a', initials: 'HO' },
-        { id: 'SWD-RM-041', name: 'Ragi Instant Mix', cat: 'breakfast', catLabel: 'Instant breakfast mixes', telugu: 'à°°à°¾à°—à°¿ à°‡à°¨à±â€Œà°¸à±à°Ÿà°‚à°Ÿà± à°®à°¿à°•à±à°¸à± Â· 500 g', price: 175, stock: 9, color: '#7d4e2c', initials: 'RM' },
-        { id: 'SWD-DM-042', name: 'Dosa Instant Mix', cat: 'breakfast', catLabel: 'Instant breakfast mixes', telugu: 'à°¦à±‹à°¶ à°®à°¿à°•à±à°¸à± Â· 500 g', price: 150, stock: 38, color: '#caa24f', initials: 'DM' },
-        { id: 'SWD-PB-051', name: 'Sambar Powder', cat: 'readytoeat', catLabel: 'Ready to eat', telugu: 'à°¸à°¾à°‚à°¬à°¾à°°à± à°ªà±Šà°¡à°¿ Â· 200 g', price: 120, stock: 44, color: '#b5571f', initials: 'SP' },
-        { id: 'SWD-PK-052', name: 'Pickle â€” Mango', cat: 'readytoeat', catLabel: 'Ready to eat', telugu: 'à°®à°¾à°®à°¿à°¡à°¿ à°Šà°°à°—à°¾à°¯ Â· 400 g', price: 210, stock: 12, color: '#caa429', initials: 'MP' },
-        { id: 'SWD-MX-061', name: 'Idli Ready Mix', cat: 'mixes', catLabel: 'Ready mixes', telugu: 'à°‡à°¡à±à°²à±€ à°®à°¿à°•à±à°¸à± Â· 1 kg', price: 165, stock: 27, color: '#e3d6a8', initials: 'IM' },
-        { id: 'SWD-SN-071', name: 'Roasted Makhana', cat: 'snacks', catLabel: 'Party time snacks', telugu: 'à°µà±‡à°¯à°¿à°‚à°šà°¿à°¨ à°®à°–à°¾à°¨à°¾ Â· 200 g', price: 230, stock: 16, color: '#d8c98f', initials: 'RM' }
+        { id: 'SWD-KP-001', name: 'Polished Kandi Pappu', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'పాలిష్ చేసిన కంది పప్పు · 1 kg', price: 250, stock: 34, color: '#c9a23d', initials: 'KP' },
+        { id: 'SWD-RG-014', name: 'Unpolished Red Gram', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'కందిపప్పు అన్‌పాలిష్డ్ · 1 kg', price: 250, stock: 7, color: '#a9742f', initials: 'RG' },
+        { id: 'SWD-MD-009', name: 'Polished Moong Dall', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'పాలిష్ చేసిన పెసర పప్పు · 1 kg', price: 220, stock: 58, color: '#d4b13c', initials: 'MD' },
+        { id: 'SWD-MD-010', name: 'Unpolished Moong Dall', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'పాలిష్ చేయని పెసర పప్పు · 1 kg', price: 220, stock: 0, color: '#7f9a4a', initials: 'MD' },
+        { id: 'SWD-TD-002', name: 'Hand Pounded Toor Dal', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'చేతితో దంచిన కంది పప్పు · 500 g', price: 140, stock: 21, color: '#8a5a2e', initials: 'TD' },
+        { id: 'SWD-CG-006', name: 'Hand Pounded Chana Dal', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'శనగ పప్పు · 1 kg', price: 180, stock: 26, color: '#c79a3a', initials: 'CD' },
+        { id: 'SWD-UD-011', name: 'Urad Dal Whole', cat: 'pulses', catLabel: 'Hand pounded pulses', telugu: 'మినుములు · 500 g', price: 130, stock: 19, color: '#52453a', initials: 'UD' },
+        { id: 'SWD-GO-021', name: 'Cold Pressed Groundnut Oil', cat: 'oils', catLabel: 'Cold pressed oils', telugu: 'వేరుశెనగ నూనె · 1 L', price: 320, stock: 5, color: '#c79029', initials: 'GO' },
+        { id: 'SWD-SO-022', name: 'Cold Pressed Sesame Oil', cat: 'oils', catLabel: 'Cold pressed oils', telugu: 'నువ్వుల నూనె · 1 L', price: 380, stock: 14, color: '#8c5b1f', initials: 'SO' },
+        { id: 'SWD-CO-023', name: 'Cold Pressed Coconut Oil', cat: 'oils', catLabel: 'Cold pressed oils', telugu: 'కొబ్బరి నూనె · 1 L', price: 340, stock: 22, color: '#cdb98b', initials: 'CO' },
+        { id: 'SWD-FW-031', name: 'Herbal Face Wash', cat: 'cosmetic', catLabel: 'Cosmetic', telugu: 'మూలికా ఫేస్ వాష్ · 100 ml', price: 160, stock: 31, color: '#6f8f4e', initials: 'FW' },
+        { id: 'SWD-HO-032', name: 'Cold Pressed Hair Oil', cat: 'cosmetic', catLabel: 'Cosmetic', telugu: 'కేశ తైలం · 200 ml', price: 240, stock: 17, color: '#4f6b3a', initials: 'HO' },
+        { id: 'SWD-RM-041', name: 'Ragi Instant Mix', cat: 'breakfast', catLabel: 'Instant breakfast mixes', telugu: 'రాగి ఇన్‌స్టంట్ మిక్స్ · 500 g', price: 175, stock: 9, color: '#7d4e2c', initials: 'RM' },
+        { id: 'SWD-DM-042', name: 'Dosa Instant Mix', cat: 'breakfast', catLabel: 'Instant breakfast mixes', telugu: 'దోశ మిక్స్ · 500 g', price: 150, stock: 38, color: '#caa24f', initials: 'DM' },
+        { id: 'SWD-PB-051', name: 'Sambar Powder', cat: 'readytoeat', catLabel: 'Ready to eat', telugu: 'సాంబార్ పొడి · 200 g', price: 120, stock: 44, color: '#b5571f', initials: 'SP' },
+        { id: 'SWD-PK-052', name: 'Pickle — Mango', cat: 'readytoeat', catLabel: 'Ready to eat', telugu: 'మామిడి ఊరగాయ · 400 g', price: 210, stock: 12, color: '#caa429', initials: 'MP' },
+        { id: 'SWD-MX-061', name: 'Idli Ready Mix', cat: 'mixes', catLabel: 'Ready mixes', telugu: 'ఇడ్లీ మిక్స్ · 1 kg', price: 165, stock: 27, color: '#e3d6a8', initials: 'IM' },
+        { id: 'SWD-SN-071', name: 'Roasted Makhana', cat: 'snacks', catLabel: 'Party time snacks', telugu: 'వేయించిన మఖానా · 200 g', price: 230, stock: 16, color: '#d8c98f', initials: 'RM' }
       ];
 
 
@@ -1991,8 +1991,8 @@
         if (s === 'low') return '<span class="tag tag-low"><span class="tag-dot"></span>Low stock</span>';
         return '<span class="tag tag-ok"><span class="tag-dot"></span>In stock</span>';
       }
-      function fmtMoney(n) { return 'â‚¹' + Number(n).toLocaleString('en-IN') + (Number.isInteger(n) ? '' : ''); }
-      function fmtMoney2(n) { return 'â‚¹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+      function fmtMoney(n) { return '₹' + Number(n).toLocaleString('en-IN') + (Number.isInteger(n) ? '' : ''); }
+      function fmtMoney2(n) { return '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
       function statusPillClass(status) {
         if (status === 'Paid') return 'pill-paid';
         if (status === 'Pending') return 'pill-pending';
@@ -2105,7 +2105,7 @@
       var pageSubtitleEl = document.getElementById('page-subtitle');
 
       var pageMeta = {
-        dashboard: { title: 'Dashboard', sub: "Saturday, 20 June 2026 Â· Hyderabad warehouse" },
+        dashboard: { title: 'Dashboard', sub: "Saturday, 20 June 2026 · Hyderabad warehouse" },
         orders: { title: 'Orders', sub: '38 orders this month' },
         customers: { title: 'Customers', sub: '26 customers on record' },
         products: { title: 'All products', sub: '142 products across 7 categories' },
@@ -2115,7 +2115,7 @@
       };
 
       var categoryLabels = {
-        all: 'All products', pulses: 'Hand pounded pulses â€” à°šà±‡à°¤à°¿à°¤à±‹ à°µà°¿à°¸à°¿à°°à°¿à°¨ à°ªà°ªà±à°ªà±à°²à±', oils: 'Cold pressed oils',
+        all: 'All products', pulses: 'Hand pounded pulses — చేతితో విసిరిన పప్పులు', oils: 'Cold pressed oils',
         cosmetic: 'Cosmetic', mixes: 'Ready mixes', readytoeat: 'Ready to eat',
         breakfast: 'Instant breakfast mixes', snacks: 'Party time snacks'
       };
@@ -2139,7 +2139,7 @@
         if (page === 'products') {
           currentCategory = opts.cat || 'all';
           document.getElementById('products-heading').textContent = categoryLabels[currentCategory];
-          pageTitleEl.textContent = categoryLabels[currentCategory].split(' â€” ')[0];
+          pageTitleEl.textContent = categoryLabels[currentCategory].split(' — ')[0];
           pageSubtitleEl.textContent = pageMeta.products.sub;
           if (opts.filter) {
             pendingProductFilter = opts.filter;
@@ -2283,7 +2283,7 @@
           if (orderSort.key === key) { orderSort.dir *= -1; } else { orderSort.key = key; orderSort.dir = 1; }
           document.querySelectorAll('#orders-table thead th').forEach(function (h) { h.classList.remove('sorted'); });
           th.classList.add('sorted');
-          th.querySelector('.sort-arrow').textContent = orderSort.dir === 1 ? 'â†‘' : 'â†“';
+          th.querySelector('.sort-arrow').textContent = orderSort.dir === 1 ? '↑' : '↓';
           renderOrders();
         });
       });
@@ -2361,7 +2361,7 @@
           if (productSort.key === key) { productSort.dir *= -1; } else { productSort.key = key; productSort.dir = 1; }
           document.querySelectorAll('#products-table thead th').forEach(function (h) { h.classList.remove('sorted'); });
           th.classList.add('sorted');
-          th.querySelector('.sort-arrow').textContent = productSort.dir === 1 ? 'â†‘' : 'â†“';
+          th.querySelector('.sort-arrow').textContent = productSort.dir === 1 ? '↑' : '↓';
           renderProducts();
         });
       });
