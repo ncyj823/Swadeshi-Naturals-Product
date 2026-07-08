@@ -1205,6 +1205,10 @@ body { perspective: 1200px; }
     </div>
     <div class="header-icons">
       <a href="login.html">
+        <a href="#" onclick="openOrderTracking(); return false;" style="display:flex;align-items:center;gap:5px;color:var(--text-mid);font-size:12px;">
+         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        My Orders
+      </a>  
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
         Login
       </a>
@@ -2300,6 +2304,213 @@ async function placeOrder() {
 
 function finishCheckout() {
   closeCheckout();
+}
+</script>
+<!-- ══════════════════════════════════════
+     ORDER TRACKING MODAL
+══════════════════════════════════════ -->
+<style>
+.ot-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 3000;
+  display: none; align-items: center; justify-content: center;
+}
+.ot-overlay.open { display: flex; }
+.ot-modal {
+  background: white; border-radius: 14px;
+  width: 560px; max-width: 95vw; max-height: 90vh;
+  overflow-y: auto; box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+}
+.ot-header {
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--brown-dark); border-radius: 14px 14px 0 0;
+}
+.ot-header h3 { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: white; }
+.ot-close { background: none; border: none; font-size: 22px; color: rgba(255,255,255,0.7); cursor: pointer; }
+.ot-close:hover { color: white; }
+.ot-body { padding: 24px; }
+.ot-search-section { margin-bottom: 24px; }
+.ot-search-section p { font-size: 13px; color: var(--text-mid); margin-bottom: 14px; line-height: 1.6; }
+.ot-input-row { display: flex; gap: 10px; }
+.ot-input {
+  flex: 1; padding: 11px 14px;
+  border: 1.5px solid var(--border); border-radius: 7px;
+  font-size: 13px; font-family: inherit; color: var(--text-dark); outline: none;
+}
+.ot-input:focus { border-color: var(--brown-accent); }
+.ot-search-btn {
+  padding: 11px 20px; background: var(--brown-dark); color: white;
+  border: none; border-radius: 7px; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit; white-space: nowrap;
+}
+.ot-search-btn:hover { background: var(--brown-accent); }
+.ot-orders-list { display: flex; flex-direction: column; gap: 16px; }
+.ot-order-card { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.ot-order-top {
+  background: var(--cream); padding: 14px 18px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+.ot-order-id { font-size: 13px; font-weight: 700; color: var(--brown-dark); }
+.ot-order-date { font-size: 11px; color: var(--text-muted); }
+.ot-order-amount { font-size: 15px; font-weight: 700; color: var(--brown-dark); }
+.ot-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+}
+.ot-status.pending   { background: #fff6da; color: #b8860b; }
+.ot-status.delivered { background: #e3f3e4; color: #2e8b3d; }
+.ot-status.cancelled { background: #fdecea; color: #d33; }
+.ot-status.shipped   { background: #e8f0fe; color: #1a73e8; }
+.ot-tracker {
+  padding: 18px 18px 8px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  position: relative;
+}
+.ot-tracker::before {
+  content: ''; position: absolute;
+  top: 28px; left: 36px; right: 36px;
+  height: 2px; background: var(--border); z-index: 0;
+}
+.ot-step { display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 1; flex: 1; }
+.ot-step-icon {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; border: 2px solid var(--border); background: white;
+}
+.ot-step.done .ot-step-icon   { background: #5a7a2e; border-color: #5a7a2e; color: white; }
+.ot-step.active .ot-step-icon { background: var(--brown-accent); border-color: var(--brown-accent); color: white; }
+.ot-step-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-align: center; text-transform: uppercase; }
+.ot-step.done .ot-step-label, .ot-step.active .ot-step-label { color: var(--brown-dark); }
+.ot-order-items { padding: 12px 18px; border-top: 1px solid var(--cream); font-size: 12px; color: var(--text-mid); line-height: 1.7; }
+.ot-order-address { padding: 0 18px 14px; font-size: 12px; color: var(--text-muted); display: flex; align-items: flex-start; gap: 6px; }
+.ot-empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+.ot-empty .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+.ot-empty p { font-size: 13px; }
+.ot-loading { text-align: center; padding: 30px; color: var(--text-muted); font-size: 13px; }
+</style>
+
+<div class="ot-overlay" id="otOverlay">
+  <div class="ot-modal">
+    <div class="ot-header">
+      <h3>📦 My Orders</h3>
+      <button class="ot-close" onclick="closeOrderTracking()">✕</button>
+    </div>
+    <div class="ot-body">
+      <div class="ot-search-section">
+        <p>Enter your phone number to view all your orders and track their status.</p>
+        <div class="ot-input-row">
+          <input class="ot-input" type="tel" id="ot-phone" placeholder="Enter your 10-digit phone number" maxlength="10" />
+          <button class="ot-search-btn" onclick="trackOrders()">Track Orders</button>
+        </div>
+      </div>
+      <div id="ot-results"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openOrderTracking() {
+  document.getElementById('otOverlay').classList.add('open');
+  document.getElementById('ot-phone').value = '';
+  document.getElementById('ot-results').innerHTML = '';
+  setTimeout(() => document.getElementById('ot-phone').focus(), 100);
+}
+function closeOrderTracking() {
+  document.getElementById('otOverlay').classList.remove('open');
+}
+document.getElementById('otOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeOrderTracking();
+});
+document.getElementById('ot-phone').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') trackOrders();
+});
+
+function getStatusSteps(status) {
+  const steps = [
+    { label: 'Order Placed', icon: '🛒' },
+    { label: 'Confirmed',    icon: '✅' },
+    { label: 'Shipped',      icon: '🚚' },
+    { label: 'Delivered',    icon: '🎉' },
+  ];
+  const statusMap = { 'Pending':1, 'Confirmed':2, 'Shipped':3, 'Delivered':4, 'Cancelled':0 };
+  const currentStep = statusMap[status] ?? 1;
+  return steps.map((s, i) => {
+    const n = i + 1;
+    let cls = '';
+    if (status === 'Cancelled') { cls = n === 1 ? 'done' : ''; }
+    else if (n < currentStep)   { cls = 'done'; }
+    else if (n === currentStep) { cls = 'active'; }
+    return { ...s, cls };
+  });
+}
+
+function statusBadgeHtml(status) {
+  const c = { 'Pending':'pending','Confirmed':'shipped','Shipped':'shipped','Delivered':'delivered','Cancelled':'cancelled' };
+  const ic = { 'Pending':'⏳','Confirmed':'✅','Shipped':'🚚','Delivered':'🎉','Cancelled':'❌' };
+  return `<span class="ot-status ${c[status]||'pending'}">${ic[status]||'📦'} ${status}</span>`;
+}
+
+function renderOrderCard(order) {
+  const steps = getStatusSteps(order.status || 'Pending');
+  const orderId = order.id ? `#ORD-${String(order.id).padStart(3,'0')}` : '#ORD-???';
+  const date = order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : 'N/A';
+  const amount = order.total_price ? `₹${Number(order.total_price).toFixed(2)}` : '';
+  const isCancelled = order.status === 'Cancelled';
+  return `
+    <div class="ot-order-card">
+      <div class="ot-order-top">
+        <div>
+          <div class="ot-order-id">${orderId}</div>
+          <div class="ot-order-date">Placed on ${date}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          ${amount ? `<div class="ot-order-amount">${amount}</div>` : ''}
+          ${statusBadgeHtml(order.status || 'Pending')}
+        </div>
+      </div>
+      ${!isCancelled ? `
+      <div class="ot-tracker">
+        ${steps.map(s => `
+          <div class="ot-step ${s.cls}">
+            <div class="ot-step-icon">${s.cls==='done' ? '✓' : s.cls==='active' ? s.icon : '○'}</div>
+            <div class="ot-step-label">${s.label}</div>
+          </div>`).join('')}
+      </div>` : `
+      <div style="padding:14px 18px;background:#fdecea;border-top:1px solid #f5c6c2;">
+        <p style="font-size:12px;color:#d33;font-weight:600;">❌ This order was cancelled.</p>
+      </div>`}
+      ${order.items ? `<div class="ot-order-items"><strong style="color:var(--brown-dark);">Items:</strong> ${order.items}</div>` : ''}
+      ${order.delivery_address ? `<div class="ot-order-address"><span>📍</span><span>${order.delivery_address}</span></div>` : ''}
+    </div>`;
+}
+
+async function trackOrders() {
+  const phone = document.getElementById('ot-phone').value.trim();
+  const resultsEl = document.getElementById('ot-results');
+  if (!phone || phone.length < 10) {
+    resultsEl.innerHTML = `<div class="ot-empty"><div class="icon">📱</div><p>Please enter a valid 10-digit phone number.</p></div>`;
+    return;
+  }
+  resultsEl.innerHTML = `<div class="ot-loading">🔍 Looking up your orders...</div>`;
+  try {
+    const { data, error } = await db.from('orders').select('*').eq('customer_phone', phone).order('created_at', { ascending: false });
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      resultsEl.innerHTML = `<div class="ot-empty"><div class="icon">📦</div><p>No orders found for this number.</p><p style="font-size:12px;margin-top:6px;">Make sure you used the same number while ordering.</p></div>`;
+      return;
+    }
+    resultsEl.innerHTML = `
+      <p style="font-size:13px;font-weight:600;color:var(--brown-dark);margin-bottom:14px;">
+        Found ${data.length} order${data.length > 1 ? 's' : ''} for your number:
+      </p>
+      <div class="ot-orders-list">${data.map(renderOrderCard).join('')}</div>`;
+  } catch(err) {
+    console.error(err);
+    resultsEl.innerHTML = `<div class="ot-empty"><div class="icon">⚠️</div><p>Something went wrong. Please try again.</p></div>`;
+  }
 }
 </script>
 
