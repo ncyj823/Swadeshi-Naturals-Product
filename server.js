@@ -228,8 +228,6 @@ async function serveStatic(req, res, pathname) {
 const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
   const pathname = requestUrl.pathname;
-  // CORS
-  // ----- CORS -----
   const allowedOrigins = [
     "https://www.swadeshinatural.com",
     "https://swadeshinatural.com"
@@ -254,9 +252,10 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "OPTIONS") {
     res.writeHead(204);
-    res.end();
-    return;
+    return res.end();
   }
+
+
 
   try {
     if (pathname === '/api/login' && req.method === 'POST') {
