@@ -9,7 +9,7 @@ const dataDir = path.join(rootDir, 'data');
 const dbFile = path.join(dataDir, 'db.json');
 const port = Number(process.env.PORT || 3000);
 const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-const adminPassword = process.env.ADMIN_PASSWORD || 'swadeshi123';
+const adminPassword = process.env.ADMIN_PASSWORD || 'Swadeshi@2026';
 const sessions = new Map();
 
 async function ensureDataFile() {
@@ -75,7 +75,10 @@ function requireAdmin(req, res) {
 }
 
 function setSessionCookie(res, token) {
-  res.setHeader('Set-Cookie', `swadeshi_admin_session=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax`);
+  res.setHeader(
+    "Set-Cookie",
+    `swadeshi_admin_session=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=None`
+  );
 }
 
 function clearSessionCookie(res) {
@@ -225,6 +228,35 @@ async function serveStatic(req, res, pathname) {
 const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
   const pathname = requestUrl.pathname;
+  // CORS
+  // ----- CORS -----
+  const allowedOrigins = [
+    "https://www.swadeshinatural.com",
+    "https://swadeshinatural.com"
+  ];
+
+  const origin = req.headers.origin;
+
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+  );
+
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
 
   try {
     if (pathname === '/api/login' && req.method === 'POST') {
