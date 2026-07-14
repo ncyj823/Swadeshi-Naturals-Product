@@ -279,12 +279,16 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/bootstrap' && req.method === 'GET') {
       if (!requireAdmin(req, res)) return;
-      const db = await readDb();
+      const products = await pool.query(
+        "SELECT * FROM products"
+      );
       return sendJson(res, 200, db);
     }
 
     if (pathname === '/api/products' && req.method === 'GET') {
-      const db = await readDb();
+      const products = await pool.query(
+        "SELECT * FROM products"
+      );
       return sendJson(res, 200, db.products || []);
     }
 
@@ -294,7 +298,9 @@ const server = http.createServer(async (req, res) => {
       if (!Array.isArray(body.products)) {
         return sendJson(res, 400, { error: 'products array is required' });
       }
-      const db = await readDb();
+      const products = await pool.query(
+        "SELECT * FROM products"
+      );
       db.products = body.products.map(normalizeProduct);
       await writeDb(db);
       return sendJson(res, 200, { ok: true, products: db.products });
@@ -303,7 +309,9 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/products' && req.method === 'POST') {
       if (!requireAdmin(req, res)) return;
       const body = await readBody(req);
-      const db = await readDb();
+      const products = await pool.query(
+        "SELECT * FROM products"
+      );
       const normalized = updateProductList(db.products || [], body);
       db.products = db.products || [];
       const existingIndex = db.products.findIndex((product) => product.id === normalized.id);
