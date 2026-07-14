@@ -1800,11 +1800,19 @@
                 <option value="breakfast">Breakfast mixes</option>
                 <option value="snacks">Party time snacks</option>
               </select></div>
-            <div class="field"><label>Selling price</label><input name="price" type="number" min="0" step="0.01"
-                required></div>
-            <div class="field"><label>MRP / old price</label><input name="oldPrice" type="number" min="0" step="0.01">
+            <div class="field">
+              <label>MRP (₹)</label>
+              <input id="mrp" name="oldPrice" type="number" min="0" step="0.01">
             </div>
-            <div class="field"><label>Discount %</label><input name="discount" type="number" min="0" max="100" step="1">
+
+            <div class="field">
+              <label>Discount (%)</label>
+              <input id="discount" name="discount" type="number" min="0" max="100" step="1">
+            </div>
+
+            <div class="field">
+              <label>Selling Price (₹)</label>
+              <input id="price" name="price" type="number" min="0" step="0.01" readonly required>
             </div>
             <div class="field"><label>Stock quantity</label><input name="stock" type="number" min="0" step="1" required>
             </div>
@@ -2071,6 +2079,7 @@
         form.elements.featured.checked = !!p.featured;
         form.elements.active.checked = p.active !== false;
         renderProductImagePreview(form.elements.images.value);
+        updateSellingPrice();
         modal.classList.add('open');
         modal.setAttribute('aria-hidden', 'false');
         setTimeout(function () { form.elements.name.focus(); }, 0);
@@ -2496,6 +2505,26 @@
       document.getElementById('product-form').elements.images.addEventListener('input', function () {
         renderProductImagePreview(this.value);
       });
+      /* ===================== AUTO PRICE CALCULATION ===================== */
+
+      const mrpInput = document.getElementById('mrp');
+      const discountInput = document.getElementById('discount');
+      const priceInput = document.getElementById('price');
+
+      function updateSellingPrice() {
+        const mrp = parseFloat(mrpInput.value) || 0;
+        const discount = parseFloat(discountInput.value) || 0;
+
+        if (mrp > 0) {
+          const sellingPrice = mrp - (mrp * discount / 100);
+          priceInput.value = sellingPrice.toFixed(2);
+        } else {
+          priceInput.value = '';
+        }
+      }
+
+      mrpInput.addEventListener('input', updateSellingPrice);
+      discountInput.addEventListener('input', updateSellingPrice);
 
       /* ===================== INIT ===================== */
 
@@ -2514,4 +2543,3 @@
 </body>
 
 </html>
-
