@@ -5,5 +5,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js"
+  },
+  "dependencies": {
+    "razorpay": "^2.9.8"
   }
 }
