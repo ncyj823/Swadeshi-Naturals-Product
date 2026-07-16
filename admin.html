@@ -2529,7 +2529,7 @@
       });
 
       document.getElementById('logout-btn').addEventListener('click', function () {
-        fetch('/api/logout', { method: 'POST' })
+        fetch(apiUrl('/api/logout'), { method: 'POST' })
           .finally(function () { window.location.href = '/login.html'; });
       });
 
