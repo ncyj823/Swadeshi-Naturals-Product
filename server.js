@@ -1,36 +1,19 @@
 const http = require('http');
-const fs = require('fs/promises');
+const fs = require('fs/promises'); // still needed: serveStatic() reads html/css/images from disk
 const path = require('path');
 const { URL } = require('url');
 const crypto = require('crypto');
+const pool = require('./db');
 
 const rootDir = __dirname;
-const dataDir = path.join(rootDir, 'data');
-const dbFile = path.join(dataDir, 'db.json');
 const port = Number(process.env.PORT || 3000);
 const adminUsername = process.env.ADMIN_USERNAME || 'admin';
 const adminPassword = process.env.ADMIN_PASSWORD || 'Swadeshi@2026';
 const sessions = new Map();
 
-async function ensureDataFile() {
-  try {
-    await fs.access(dbFile);
-  } catch {
-    await fs.mkdir(dataDir, { recursive: true });
-    await fs.writeFile(dbFile, JSON.stringify({ products: [], orders: [], customers: [] }, null, 2), 'utf8');
-  }
-}
-
-async function readDb() {
-  await ensureDataFile();
-  const raw = await fs.readFile(dbFile, 'utf8');
-  return JSON.parse(raw);
-}
-
-async function writeDb(db) {
-  await fs.mkdir(dataDir, { recursive: true });
-  await fs.writeFile(dbFile, JSON.stringify(db, null, 2), 'utf8');
-}
+// ---------------------------------------------------------------------------
+// small helpers
+// ---------------------------------------------------------------------------
 
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -76,7 +59,7 @@ function requireAdmin(req, res) {
 
 function setSessionCookie(res, token) {
   res.setHeader(
-    "Set-Cookie",
+    'Set-Cookie',
     `swadeshi_admin_session=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=None`
   );
 }
@@ -84,6 +67,18 @@ function setSessionCookie(res, token) {
 function clearSessionCookie(res) {
   res.setHeader('Set-Cookie', 'swadeshi_admin_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
 }
+
+async function readBody(req) {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  const raw = Buffer.concat(chunks).toString('utf8');
+  return raw ? JSON.parse(raw) : {};
+}
+
+// ---------------------------------------------------------------------------
+// normalization (unchanged in shape from the JSON version, still the single
+// source of truth for what a "clean" product/order/customer object looks like)
+// ---------------------------------------------------------------------------
 
 function normalizeImages(value) {
   if (Array.isArray(value)) {
@@ -169,23 +164,183 @@ function normalizeCustomer(input) {
   };
 }
 
-function updateProductList(products, incoming) {
-  const normalized = normalizeProduct(incoming);
-  const index = products.findIndex((product) => product.id === normalized.id);
-  if (index >= 0) {
-    products[index] = normalized;
-  } else {
-    products.unshift(normalized);
-  }
-  return normalized;
+// ---------------------------------------------------------------------------
+// row <-> API-shape mappers (Postgres uses snake_case columns; the frontend
+// contract uses camelCase — these are the only new pieces vs. the JSON version)
+// ---------------------------------------------------------------------------
+
+function rowToProduct(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    title: row.title,
+    cat: row.cat,
+    catLabel: row.cat_label,
+    telugu: row.telugu,
+    price: Number(row.price),
+    oldPrice: Number(row.old_price),
+    discount: Number(row.discount),
+    stock: row.stock,
+    rating: Number(row.rating),
+    seller: row.seller,
+    delivery: row.delivery,
+    description: row.description,
+    image: row.image,
+    images: row.images || [],
+    color: row.color,
+    initials: row.initials,
+    featured: row.featured,
+    active: row.active
+  };
 }
 
-async function readBody(req) {
-  const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
-  const raw = Buffer.concat(chunks).toString('utf8');
-  return raw ? JSON.parse(raw) : {};
+function rowToOrder(row) {
+  return {
+    id: row.id,
+    customer: row.customer,
+    customerPhone: row.customer_phone,
+    customerEmail: row.customer_email,
+    locality: row.locality,
+    address: row.address,
+    notes: row.notes,
+    items: row.items,
+    itemDetails: row.item_details || [],
+    amount: Number(row.amount),
+    paymentStatus: row.payment_status,
+    status: row.status,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+  };
 }
+
+function rowToCustomer(row) {
+  return {
+    name: row.name,
+    loc: row.loc,
+    orders: row.orders,
+    spend: Number(row.spend),
+    since: row.since
+  };
+}
+
+// ---------------------------------------------------------------------------
+// data-access functions — every JSON readDb()/writeDb() call site becomes one
+// of these
+// ---------------------------------------------------------------------------
+
+async function fetchAllProducts() {
+  const { rows } = await pool.query('SELECT * FROM products ORDER BY created_at DESC');
+  return rows.map(rowToProduct);
+}
+
+async function fetchAllOrders() {
+  const { rows } = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
+  return rows.map(rowToOrder);
+}
+
+async function fetchAllCustomers() {
+  const { rows } = await pool.query('SELECT * FROM customers ORDER BY name ASC');
+  return rows.map(rowToCustomer);
+}
+
+async function upsertProduct(product) {
+  const { rows } = await pool.query(
+    `INSERT INTO products
+       (id, name, title, cat, cat_label, telugu, price, old_price, discount,
+        stock, rating, seller, delivery, description, image, images, color,
+        initials, featured, active, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20, now())
+     ON CONFLICT (id) DO UPDATE SET
+       name = EXCLUDED.name, title = EXCLUDED.title, cat = EXCLUDED.cat,
+       cat_label = EXCLUDED.cat_label, telugu = EXCLUDED.telugu, price = EXCLUDED.price,
+       old_price = EXCLUDED.old_price, discount = EXCLUDED.discount, stock = EXCLUDED.stock,
+       rating = EXCLUDED.rating, seller = EXCLUDED.seller, delivery = EXCLUDED.delivery,
+       description = EXCLUDED.description, image = EXCLUDED.image, images = EXCLUDED.images,
+       color = EXCLUDED.color, initials = EXCLUDED.initials, featured = EXCLUDED.featured,
+       active = EXCLUDED.active, updated_at = now()
+     RETURNING *`,
+    [
+      product.id, product.name, product.title, product.cat, product.catLabel,
+      product.telugu, product.price, product.oldPrice, product.discount,
+      product.stock, product.rating, product.seller, product.delivery,
+      product.description, product.image, JSON.stringify(product.images),
+      product.color, product.initials, product.featured, product.active
+    ]
+  );
+  return rowToProduct(rows[0]);
+}
+
+async function replaceAllProducts(productList) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM products');
+    for (const product of productList) {
+      await client.query(
+        `INSERT INTO products
+           (id, name, title, cat, cat_label, telugu, price, old_price, discount,
+            stock, rating, seller, delivery, description, image, images, color,
+            initials, featured, active)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
+        [
+          product.id, product.name, product.title, product.cat, product.catLabel,
+          product.telugu, product.price, product.oldPrice, product.discount,
+          product.stock, product.rating, product.seller, product.delivery,
+          product.description, product.image, JSON.stringify(product.images),
+          product.color, product.initials, product.featured, product.active
+        ]
+      );
+    }
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function deleteProduct(id) {
+  await pool.query('DELETE FROM products WHERE id = $1', [id]);
+}
+
+async function insertOrder(order) {
+  const { rows } = await pool.query(
+    `INSERT INTO orders
+       (id, customer, customer_phone, customer_email, locality, address, notes,
+        items, item_details, amount, payment_status, status, created_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+     RETURNING *`,
+    [
+      order.id, order.customer, order.customerPhone, order.customerEmail,
+      order.locality, order.address, order.notes, order.items,
+      JSON.stringify(order.itemDetails), order.amount, order.paymentStatus,
+      order.status, order.createdAt
+    ]
+  );
+  return rowToOrder(rows[0]);
+}
+
+async function updateOrder(id, mergedOrder) {
+  const { rows } = await pool.query(
+    `UPDATE orders SET
+       customer = $2, customer_phone = $3, customer_email = $4, locality = $5,
+       address = $6, notes = $7, items = $8, item_details = $9, amount = $10,
+       payment_status = $11, status = $12
+     WHERE id = $1
+     RETURNING *`,
+    [
+      id, mergedOrder.customer, mergedOrder.customerPhone, mergedOrder.customerEmail,
+      mergedOrder.locality, mergedOrder.address, mergedOrder.notes, mergedOrder.items,
+      JSON.stringify(mergedOrder.itemDetails), mergedOrder.amount,
+      mergedOrder.paymentStatus, mergedOrder.status
+    ]
+  );
+  return rows[0] ? rowToOrder(rows[0]) : null;
+}
+
+// ---------------------------------------------------------------------------
+// static file serving (unchanged — nothing to do with the database)
+// ---------------------------------------------------------------------------
 
 const contentTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -225,39 +380,33 @@ async function serveStatic(req, res, pathname) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// HTTP server / routes
+// ---------------------------------------------------------------------------
+
 const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
   const pathname = requestUrl.pathname;
   const allowedOrigins = [
-    "https://www.swadeshinatural.com",
-    "https://swadeshinatural.com"
+    'https://www.swadeshinatural.com',
+    'https://swadeshinatural.com'
   ];
 
   const origin = req.headers.origin;
-
   if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
 
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-  );
-
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     res.writeHead(204);
     return res.end();
   }
 
-
-
   try {
+    // ---- auth ----
     if (pathname === '/api/login' && req.method === 'POST') {
       const body = await readBody(req);
       if (String(body.username || '') === adminUsername && String(body.password || '') === adminPassword) {
@@ -277,19 +426,21 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true });
     }
 
+    // ---- bootstrap ----
     if (pathname === '/api/bootstrap' && req.method === 'GET') {
       if (!requireAdmin(req, res)) return;
-      const products = await pool.query(
-        "SELECT * FROM products"
-      );
-      return sendJson(res, 200, db);
+      const [products, orders, customers] = await Promise.all([
+        fetchAllProducts(),
+        fetchAllOrders(),
+        fetchAllCustomers()
+      ]);
+      return sendJson(res, 200, { products, orders, customers });
     }
 
+    // ---- products ----
     if (pathname === '/api/products' && req.method === 'GET') {
-      const products = await pool.query(
-        "SELECT * FROM products"
-      );
-      return sendJson(res, 200, db.products || []);
+      const products = await fetchAllProducts();
+      return sendJson(res, 200, products);
     }
 
     if (pathname === '/api/products/bulk' && req.method === 'PUT') {
@@ -298,74 +449,55 @@ const server = http.createServer(async (req, res) => {
       if (!Array.isArray(body.products)) {
         return sendJson(res, 400, { error: 'products array is required' });
       }
-      const products = await pool.query(
-        "SELECT * FROM products"
-      );
-      db.products = body.products.map(normalizeProduct);
-      await writeDb(db);
-      return sendJson(res, 200, { ok: true, products: db.products });
+      const normalizedList = body.products.map(normalizeProduct);
+      await replaceAllProducts(normalizedList);
+      return sendJson(res, 200, { ok: true, products: normalizedList });
     }
 
     if (pathname === '/api/products' && req.method === 'POST') {
       if (!requireAdmin(req, res)) return;
       const body = await readBody(req);
-      const products = await pool.query(
-        "SELECT * FROM products"
-      );
-      const normalized = updateProductList(db.products || [], body);
-      db.products = db.products || [];
-      const existingIndex = db.products.findIndex((product) => product.id === normalized.id);
-      if (existingIndex >= 0) db.products[existingIndex] = normalized;
-      else db.products.unshift(normalized);
-      await writeDb(db);
-      return sendJson(res, 200, { ok: true, product: normalized });
+      const normalized = normalizeProduct(body);
+      const saved = await upsertProduct(normalized);
+      return sendJson(res, 200, { ok: true, product: saved });
     }
 
     if (pathname.startsWith('/api/products/') && req.method === 'PUT') {
       if (!requireAdmin(req, res)) return;
       const id = decodeURIComponent(pathname.split('/').pop());
       const body = await readBody(req);
-      const db = await readDb();
       const product = normalizeProduct({ ...body, id });
-      db.products = db.products || [];
-      const index = db.products.findIndex((item) => item.id === id);
-      if (index === -1) {
-        db.products.unshift(product);
-      } else {
-        db.products[index] = product;
-      }
-      await writeDb(db);
-      return sendJson(res, 200, { ok: true, product });
+      const saved = await upsertProduct(product);
+      return sendJson(res, 200, { ok: true, product: saved });
     }
 
     if (pathname.startsWith('/api/products/') && req.method === 'DELETE') {
       if (!requireAdmin(req, res)) return;
       const id = decodeURIComponent(pathname.split('/').pop());
-      const db = await readDb();
-      db.products = (db.products || []).filter((product) => product.id !== id);
-      await writeDb(db);
+      await deleteProduct(id);
       return sendJson(res, 200, { ok: true });
     }
 
+    // ---- orders ----
     if (pathname === '/api/orders' && req.method === 'POST') {
       const body = await readBody(req);
-      const db = await readDb();
-      db.orders = db.orders || [];
       const order = normalizeOrder(body);
-      db.orders.unshift(order);
-      await writeDb(db);
-      return sendJson(res, 201, { ok: true, order: publicOrder(order) });
+      const saved = await insertOrder(order);
+      return sendJson(res, 201, { ok: true, order: publicOrder(saved) });
     }
 
     if (pathname === '/api/orders/track' && req.method === 'GET') {
       const query = String(requestUrl.searchParams.get('q') || '').trim().toLowerCase();
       if (!query) return sendJson(res, 400, { error: 'Order ID or phone number is required' });
       const digits = query.replace(/\D/g, '');
-      const db = await readDb();
-      const matches = (db.orders || []).filter((order) => {
+      // Same matching semantics as the JSON version, just run against a DB read
+      // instead of an in-memory array — order volume here doesn't justify
+      // pushing the fuzzy-match logic into SQL and risking behavior drift.
+      const allOrders = await fetchAllOrders();
+      const matches = allOrders.filter((order) => {
         const normalizedId = String(order.id || '').toLowerCase();
         const idMatch = normalizedId === query || normalizedId.includes(query.replace(/^#/, ''));
-        const phoneDigits = String(order.customerPhone || order.phone || '').replace(/\D/g, '');
+        const phoneDigits = String(order.customerPhone || '').replace(/\D/g, '');
         const phoneMatch = digits.length >= 4 && phoneDigits.endsWith(digits);
         return idMatch || phoneMatch;
       }).map(publicOrder);
@@ -374,27 +506,30 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/orders' && req.method === 'GET') {
       if (!requireAdmin(req, res)) return;
-      const db = await readDb();
-      return sendJson(res, 200, db.orders || []);
+      const orders = await fetchAllOrders();
+      return sendJson(res, 200, orders);
     }
 
     if (pathname.startsWith('/api/orders/') && req.method === 'PATCH') {
       if (!requireAdmin(req, res)) return;
       const id = decodeURIComponent(pathname.split('/').pop());
       const body = await readBody(req);
-      const db = await readDb();
-      db.orders = (db.orders || []).map((order) => order.id === id ? normalizeOrder({ ...order, ...body, id }) : order);
-      await writeDb(db);
-      const updated = db.orders.find((order) => order.id === id) || null;
+      const { rows } = await pool.query('SELECT * FROM orders WHERE id = $1', [id]);
+      if (!rows[0]) return sendJson(res, 200, { ok: true, order: null });
+      const existing = rowToOrder(rows[0]);
+      const merged = normalizeOrder({ ...existing, ...body, id });
+      const updated = await updateOrder(id, merged);
       return sendJson(res, 200, { ok: true, order: updated });
     }
 
+    // ---- customers ----
     if (pathname === '/api/customers' && req.method === 'GET') {
       if (!requireAdmin(req, res)) return;
-      const db = await readDb();
-      return sendJson(res, 200, db.customers || []);
+      const customers = await fetchAllCustomers();
+      return sendJson(res, 200, customers);
     }
 
+    // ---- static / admin / login ----
     if (pathname === '/admin' || pathname === '/admin.html') {
       if (!requireAdmin(req, res)) return;
       return serveStatic(req, res, '/admin.html');
@@ -410,6 +545,7 @@ const server = http.createServer(async (req, res) => {
 
     return serveStatic(req, res, pathname);
   } catch (error) {
+    console.error(error);
     return sendJson(res, 500, { error: error.message || 'Server error' });
   }
 });
