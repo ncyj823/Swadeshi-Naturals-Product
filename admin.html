@@ -2432,16 +2432,38 @@
           products[index] = next;
         } else { products.unshift(next); }
         var keepAdding = e.submitter && e.submitter.id === 'save-add-product-btn';
-        saveProducts().then(function () {
-          refreshProductViews();
-          if (keepAdding) {
-            openProductModal();
-          } else {
-            closeProductModal();
+        (async function () {
+          try {
+            if (index >= 0) {
+              await fetchJson('/api/products/' + encodeURIComponent(next.id), {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(backendProductPayload(next))
+              });
+            } else {
+              await fetchJson('/api/products', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(backendProductPayload(next))
+              });
+            }
+
+            rememberProductsLocally();
+            refreshProductViews();
+
+            if (keepAdding) {
+              openProductModal();
+            } else {
+              closeProductModal();
+            }
+          } catch (err) {
+            alert('Could not save the product: ' + (err.message || err));
           }
-        }).catch(function (err) {
-          alert('Could not save the product: ' + (err.message || err));
-        });
+        })();
       });
       document.getElementById('delete-product-btn').addEventListener('click', function () {
         var originalId = document.getElementById('product-form').dataset.originalId;

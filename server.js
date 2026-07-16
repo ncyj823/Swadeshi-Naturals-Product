@@ -4,12 +4,14 @@ const path = require('path');
 const { URL } = require('url');
 const crypto = require('crypto');
 const pool = require('./db');
+const razorpay = require("./razorpay");
 
 const rootDir = __dirname;
 const port = Number(process.env.PORT || 3000);
 const adminUsername = process.env.ADMIN_USERNAME || 'admin';
 const adminPassword = process.env.ADMIN_PASSWORD || 'Swadeshi@2026';
 const sessions = new Map();
+
 
 // ---------------------------------------------------------------------------
 // small helpers
@@ -442,112 +444,140 @@ const server = http.createServer(async (req, res) => {
       const products = await fetchAllProducts();
       return sendJson(res, 200, products);
     }
+    if (pathname === "/api/payment/create-order" && req.method === "POST") {
+      console.log("STEP 1");
 
-    if (pathname === '/api/products/bulk' && req.method === 'PUT') {
-      if (!requireAdmin(req, res)) return;
-      const body = await readBody(req);
-      if (!Array.isArray(body.products)) {
-        return sendJson(res, 400, { error: 'products array is required' });
+      try {
+        const body = await readBody(req);
+        console.log("STEP 2", body);
+
+        const amount = Number(body.amount);
+        console.log("STEP 3", amount);
+
+        const order = await razorpay.orders.create({
+          amount: Math.round(amount * 100),
+          currency: "INR",
+          receipt: "order_" + Date.now()
+        });
+
+        console.log("STEP 4", order);
+
+        return sendJson(res, 200, order);
+
+      } catch (err) {
+        console.error("RAZORPAY ERROR:", err);
+
+        return sendJson(res, 500, {
+          error: err.message
+        });
       }
-      const normalizedList = body.products.map(normalizeProduct);
-      await replaceAllProducts(normalizedList);
-      return sendJson(res, 200, { ok: true, products: normalizedList });
     }
-
-    if (pathname === '/api/products' && req.method === 'POST') {
-      if (!requireAdmin(req, res)) return;
-      const body = await readBody(req);
-      const normalized = normalizeProduct(body);
-      const saved = await upsertProduct(normalized);
-      return sendJson(res, 200, { ok: true, product: saved });
-    }
-
-    if (pathname.startsWith('/api/products/') && req.method === 'PUT') {
-      if (!requireAdmin(req, res)) return;
-      const id = decodeURIComponent(pathname.split('/').pop());
-      const body = await readBody(req);
-      const product = normalizeProduct({ ...body, id });
-      const saved = await upsertProduct(product);
-      return sendJson(res, 200, { ok: true, product: saved });
-    }
-
-    if (pathname.startsWith('/api/products/') && req.method === 'DELETE') {
-      if (!requireAdmin(req, res)) return;
-      const id = decodeURIComponent(pathname.split('/').pop());
-      await deleteProduct(id);
-      return sendJson(res, 200, { ok: true });
-    }
-
-    // ---- orders ----
-    if (pathname === '/api/orders' && req.method === 'POST') {
-      const body = await readBody(req);
-      const order = normalizeOrder(body);
-      const saved = await insertOrder(order);
-      return sendJson(res, 201, { ok: true, order: publicOrder(saved) });
-    }
-
-    if (pathname === '/api/orders/track' && req.method === 'GET') {
-      const query = String(requestUrl.searchParams.get('q') || '').trim().toLowerCase();
-      if (!query) return sendJson(res, 400, { error: 'Order ID or phone number is required' });
-      const digits = query.replace(/\D/g, '');
-      // Same matching semantics as the JSON version, just run against a DB read
-      // instead of an in-memory array — order volume here doesn't justify
-      // pushing the fuzzy-match logic into SQL and risking behavior drift.
-      const allOrders = await fetchAllOrders();
-      const matches = allOrders.filter((order) => {
-        const normalizedId = String(order.id || '').toLowerCase();
-        const idMatch = normalizedId === query || normalizedId.includes(query.replace(/^#/, ''));
-        const phoneDigits = String(order.customerPhone || '').replace(/\D/g, '');
-        const phoneMatch = digits.length >= 4 && phoneDigits.endsWith(digits);
-        return idMatch || phoneMatch;
-      }).map(publicOrder);
-      return sendJson(res, 200, { ok: true, orders: matches });
-    }
-
-    if (pathname === '/api/orders' && req.method === 'GET') {
-      if (!requireAdmin(req, res)) return;
-      const orders = await fetchAllOrders();
-      return sendJson(res, 200, orders);
-    }
-
-    if (pathname.startsWith('/api/orders/') && req.method === 'PATCH') {
-      if (!requireAdmin(req, res)) return;
-      const id = decodeURIComponent(pathname.split('/').pop());
-      const body = await readBody(req);
-      const { rows } = await pool.query('SELECT * FROM orders WHERE id = $1', [id]);
-      if (!rows[0]) return sendJson(res, 200, { ok: true, order: null });
-      const existing = rowToOrder(rows[0]);
-      const merged = normalizeOrder({ ...existing, ...body, id });
-      const updated = await updateOrder(id, merged);
-      return sendJson(res, 200, { ok: true, order: updated });
-    }
-
-    // ---- customers ----
-    if (pathname === '/api/customers' && req.method === 'GET') {
-      if (!requireAdmin(req, res)) return;
-      const customers = await fetchAllCustomers();
-      return sendJson(res, 200, customers);
-    }
-
-    // ---- static / admin / login ----
-    if (pathname === '/admin' || pathname === '/admin.html') {
-      if (!requireAdmin(req, res)) return;
-      return serveStatic(req, res, '/admin.html');
-    }
-
-    if (pathname === '/login' || pathname === '/login.html') {
-      return serveStatic(req, res, '/login.html');
-    }
-
-    if (pathname === '/' || pathname === '/index.html' || pathname.startsWith('/images/')) {
-      return serveStatic(req, res, pathname);
-    }
-
-    return serveStatic(req, res, pathname);
-  } catch (error) {
-    console.error(error);
-    return sendJson(res, 500, { error: error.message || 'Server error' });
   }
+    if (pathname === '/api/products/bulk' && req.method === 'PUT') {
+    if (!requireAdmin(req, res)) return;
+    const body = await readBody(req);
+    if (!Array.isArray(body.products)) {
+      return sendJson(res, 400, { error: 'products array is required' });
+    }
+    const normalizedList = body.products.map(normalizeProduct);
+    await replaceAllProducts(normalizedList);
+    return sendJson(res, 200, { ok: true, products: normalizedList });
+  }
+
+  if (pathname === '/api/products' && req.method === 'POST') {
+    if (!requireAdmin(req, res)) return;
+    const body = await readBody(req);
+    const normalized = normalizeProduct(body);
+    const saved = await upsertProduct(normalized);
+    return sendJson(res, 200, { ok: true, product: saved });
+  }
+
+  if (pathname.startsWith('/api/products/') && req.method === 'PUT') {
+    if (!requireAdmin(req, res)) return;
+    const id = decodeURIComponent(pathname.split('/').pop());
+    const body = await readBody(req);
+    const product = normalizeProduct({ ...body, id });
+    const saved = await upsertProduct(product);
+    return sendJson(res, 200, { ok: true, product: saved });
+  }
+
+  if (pathname.startsWith('/api/products/') && req.method === 'DELETE') {
+    if (!requireAdmin(req, res)) return;
+    const id = decodeURIComponent(pathname.split('/').pop());
+    await deleteProduct(id);
+    return sendJson(res, 200, { ok: true });
+  }
+
+  // ---- orders ----
+  if (pathname === '/api/orders' && req.method === 'POST') {
+    const body = await readBody(req);
+    const order = normalizeOrder(body);
+    const saved = await insertOrder(order);
+    return sendJson(res, 201, { ok: true, order: publicOrder(saved) });
+  }
+
+  if (pathname === '/api/orders/track' && req.method === 'GET') {
+    const query = String(requestUrl.searchParams.get('q') || '').trim().toLowerCase();
+    if (!query) return sendJson(res, 400, { error: 'Order ID or phone number is required' });
+    const digits = query.replace(/\D/g, '');
+    // Same matching semantics as the JSON version, just run against a DB read
+    // instead of an in-memory array — order volume here doesn't justify
+    // pushing the fuzzy-match logic into SQL and risking behavior drift.
+    const allOrders = await fetchAllOrders();
+    const matches = allOrders.filter((order) => {
+      const normalizedId = String(order.id || '').toLowerCase();
+      const idMatch = normalizedId === query || normalizedId.includes(query.replace(/^#/, ''));
+      const phoneDigits = String(order.customerPhone || '').replace(/\D/g, '');
+      const phoneMatch = digits.length >= 4 && phoneDigits.endsWith(digits);
+      return idMatch || phoneMatch;
+    }).map(publicOrder);
+    return sendJson(res, 200, { ok: true, orders: matches });
+  }
+
+  if (pathname === '/api/orders' && req.method === 'GET') {
+    if (!requireAdmin(req, res)) return;
+    const orders = await fetchAllOrders();
+    return sendJson(res, 200, orders);
+  }
+
+  if (pathname.startsWith('/api/orders/') && req.method === 'PATCH') {
+    if (!requireAdmin(req, res)) return;
+    const id = decodeURIComponent(pathname.split('/').pop());
+    const body = await readBody(req);
+    const { rows } = await pool.query('SELECT * FROM orders WHERE id = $1', [id]);
+    if (!rows[0]) return sendJson(res, 200, { ok: true, order: null });
+    const existing = rowToOrder(rows[0]);
+    const merged = normalizeOrder({ ...existing, ...body, id });
+    const updated = await updateOrder(id, merged);
+    return sendJson(res, 200, { ok: true, order: updated });
+  }
+
+  // ---- customers ----
+  if (pathname === '/api/customers' && req.method === 'GET') {
+    if (!requireAdmin(req, res)) return;
+    const customers = await fetchAllCustomers();
+    return sendJson(res, 200, customers);
+  }
+
+  // ---- static / admin / login ----
+  if (pathname === '/admin' || pathname === '/admin.html') {
+    if (!requireAdmin(req, res)) return;
+    return serveStatic(req, res, '/admin.html');
+  }
+
+  if (pathname === '/login' || pathname === '/login.html') {
+    return serveStatic(req, res, '/login.html');
+  }
+
+  if (pathname === '/' || pathname === '/index.html' || pathname.startsWith('/images/')) {
+    return serveStatic(req, res, pathname);
+  }
+
+  return serveStatic(req, res, pathname);
+} catch (error) {
+  console.error(error);
+  return sendJson(res, 500, { error: error.message || 'Server error' });
+}
 });
 
 server.listen(port, () => {
