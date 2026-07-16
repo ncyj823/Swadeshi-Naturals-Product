@@ -1880,11 +1880,20 @@
         pulses: 'Hand pounded pulses', oils: 'Cold pressed oils', cosmetic: 'Cosmetic', mixes: 'Ready mixes', readytoeat: 'Ready to eat', breakfast: 'Instant breakfast mixes', snacks: 'Party time snacks'
       };
       function apiUrl(path) { return API_BASE + path; }
-      async function fetchJson(path, options) {
+      async function fetchJson(path, options = {}) {
+        options.credentials = 'include';
         var response = await fetch(apiUrl(path), options);
         var data = null;
-        try { data = await response.json(); } catch (err) { data = null; }
-        if (!response.ok) { throw new Error((data && data.error) || response.statusText || 'Request failed'); }
+        try {
+          data = await response.json();
+        } catch (err) {
+          data = null;
+        }
+
+        if (!response.ok) {
+          throw new Error((data && data.error) || response.statusText || 'Request failed');
+        }
+
         return data;
       }
       async function loadBootstrapData() {
