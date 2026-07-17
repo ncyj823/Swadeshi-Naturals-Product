@@ -572,6 +572,11 @@ const server = http.createServer(async (req, res) => {
       return serveStatic(req, res, pathname);
     }
 
+    // Protect any other admin static assets (e.g., CSS, JS) under /admin/*
+    if (pathname.startsWith('/admin/')) {
+      if (!requireAdmin(req, res)) return;
+    }
+
     return serveStatic(req, res, pathname);
   } catch (error) {
     console.error(error);
