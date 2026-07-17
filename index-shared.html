@@ -1852,6 +1852,129 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+
+    /* ===== MOBILE RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .header-inner {
+        flex-wrap: wrap;
+        padding: 10px 12px;
+        gap: 8px;
+      }
+
+      .logo {
+        order: 1;
+      }
+
+      .logo-img {
+        width: 32px;
+        height: 32px;
+      }
+
+      .logo-text {
+        font-size: 11px;
+      }
+
+      .header-icons {
+        order: 2;
+        gap: 10px;
+      }
+
+      .header-icons a {
+        font-size: 0;
+        gap: 0;
+      }
+
+      .header-icons a svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .header-icons .cart-btn {
+        font-size: 11px;
+        padding: 6px 10px;
+        gap: 4px;
+      }
+
+      .search-bar {
+        order: 3;
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .search-bar input {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+
+      .search-bar button {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+
+      .nav-inner {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+
+      .nav-inner::-webkit-scrollbar {
+        display: none;
+      }
+
+      nav a {
+        white-space: nowrap;
+        font-size: 11px;
+        padding: 10px 12px;
+      }
+
+      .hero {
+        min-height: 280px;
+        background-attachment: scroll;
+      }
+
+      .hero-content {
+        padding: 30px 16px;
+        margin-left: 16px;
+      }
+
+      .hero h1 {
+        font-size: 26px;
+      }
+
+      .hero p {
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header-inner {
+        padding: 8px 10px;
+        gap: 6px;
+      }
+
+      .header-icons {
+        gap: 8px;
+      }
+
+      .logo-text {
+        font-size: 10px;
+      }
+
+      .logo-img {
+        width: 28px;
+        height: 28px;
+      }
+
+      .header-icons .cart-btn {
+        font-size: 0;
+        padding: 6px 8px;
+      }
+
+      .lang-toggle {
+        font-size: 11px;
+        padding: 4px 8px;
+      }
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
