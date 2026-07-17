@@ -6,6 +6,9 @@ const crypto = require('crypto');
 const pool = require('./db');
 const razorpay = require("./razorpay");
 
+// Customer authentication utilities
+const { hashPassword, verifyPassword, createCustomerToken, verifyCustomerToken } = require('./auth');
+
 const rootDir = __dirname;
 const port = Number(process.env.PORT || 3000);
 const adminUsername = process.env.ADMIN_USERNAME || 'admin';
@@ -68,6 +71,38 @@ function setSessionCookie(res, token) {
 
 function clearSessionCookie(res) {
   res.setHeader('Set-Cookie', 'swadeshi_admin_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+}
+
+// Customer cookie helpers
+function setCustomerCookie(res, token) {
+  res.setHeader(
+    'Set-Cookie',
+    `customer_jwt=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict`
+  );
+}
+
+function clearCustomerCookie(res) {
+  res.setHeader('Set-Cookie', 'customer_jwt=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0');
+}
+
+// Middleware: verify customer JWT on each request
+function requireCustomer(req, res) {
+  const cookies = parseCookies(req.headers.cookie);
+  const token = cookies.customer_jwt;
+  if (!token) {
+    res.writeHead(302, { Location: '/login.html' });
+    res.end();
+    return false;
+  }
+  try {
+    const payload = verifyCustomerToken(token);
+    req.customerId = payload.customerId || payload.id;
+    return true;
+  } catch (e) {
+    res.writeHead(302, { Location: '/login.html' });
+    res.end();
+    return false;
+  }
 }
 
 async function readBody(req) {
@@ -568,7 +603,80 @@ const server = http.createServer(async (req, res) => {
       return serveStatic(req, res, '/login.html');
     }
 
+    // ------------------- Customer Auth API -------------------
+    // Register new customer
+    if (pathname === '/api/register' && req.method === 'POST') {
+      const body = await readBody(req);
+      const { email, phone, password, name } = body;
+      if (!password || !(email || phone)) {
+        return sendJson(res, 400, { error: 'Password and at least email or phone required' });
+      }
+      // Validate password strength (min 8 chars, upper, lower, digit, special)
+      const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
+      if (!pwdRegex.test(password)) {
+        return sendJson(res, 400, { error: 'Weak password. Must meet policy.' });
+      }
+      const passwordHash = await hashPassword(password);
+      // Insert into DB
+      const { rows } = await pool.query(
+        `INSERT INTO customers (email, phone, password_hash, name) VALUES ($1,$2,$3,$4) RETURNING id, email, phone, name`,
+        [email || null, phone || null, passwordHash, name || null]
+      );
+      const newUser = rows[0];
+      const token = createCustomerToken({ customerId: newUser.id });
+      setCustomerCookie(res, token);
+      return sendJson(res, 201, { ok: true, user: newUser });
+    }
+
+    // Login - step 1: verify credentials and send OTP
+    if (pathname === '/api/login' && req.method === 'POST') {
+      const body = await readBody(req);
+      const { identifier, password } = body; // identifier = email or phone
+      if (!identifier || !password) {
+        return sendJson(res, 400, { error: 'Identifier and password required' });
+      }
+      const result = await pool.query(
+        `SELECT * FROM customers WHERE email = $1 OR phone = $1`,
+        [identifier]
+      );
+      const user = result.rows[0];
+      if (!user) return sendJson(res, 401, { error: 'Invalid credentials' });
+      const pwdOk = await verifyPassword(password, user.password_hash);
+      if (!pwdOk) return sendJson(res, 401, { error: 'Invalid credentials' });
+      // generate OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      await pool.query(`INSERT INTO otps (phone, code, expires_at) VALUES ($1,$2,$3) ON CONFLICT (phone) DO UPDATE SET code=$2, expires_at=$3`,
+        [user.phone, otp, expiresAt]
+      );
+      console.log('OTP for', user.phone, otp); // placeholder for SMS
+      return sendJson(res, 200, { ok: true, needOtp: true, userId: user.id });
+    }
+
+    // Verify OTP - step 2
+    if (pathname === '/api/verify-otp' && req.method === 'POST') {
+      const body = await readBody(req);
+      const { userId, otp } = body;
+      if (!userId || !otp) return sendJson(res, 400, { error: 'userId and otp required' });
+      const otpRes = await pool.query(`SELECT * FROM otps WHERE phone = (SELECT phone FROM customers WHERE id = $1) AND code = $2 AND expires_at > now()`,
+        [userId, otp]
+      );
+      if (otpRes.rowCount === 0) return sendJson(res, 400, { error: 'Invalid or expired OTP' });
+      // OTP valid, delete it
+      await pool.query(`DELETE FROM otps WHERE phone = (SELECT phone FROM customers WHERE id = $1)`, [userId]);
+      const token = createCustomerToken({ customerId: userId });
+      setCustomerCookie(res, token);
+      return sendJson(res, 200, { ok: true });
+    }
+
+    // Customer logout
+    if (pathname === '/api/customer/logout' && req.method === 'POST') {
+      clearCustomerCookie(res);
+      return sendJson(res, 200, { ok: true });
+    }
+
     if (pathname === '/' || pathname === '/index.html' || pathname.startsWith('/images/')) {
+      if (!requireCustomer(req, res)) return; // redirect handled inside requireCustomer
       return serveStatic(req, res, pathname);
     }
 
