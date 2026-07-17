@@ -57,14 +57,14 @@
 
     /* 4. Bottom Blinkit bar ka smooth entry bounce */
     .blinkit-cart-bar {
-      transform: translateX(-50%) translateY(100px);
+      transform: translateY(100px);
       transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.25), opacity 0.3s ease !important;
       opacity: 0;
       pointer-events: none;
     }
 
     .blinkit-cart-bar.visible {
-      transform: translateX(-50%) translateY(0) !important;
+      transform: translateY(0) !important;
       opacity: 1 !important;
       pointer-events: auto !important;
     }
@@ -106,13 +106,19 @@
 
     /* 7. Backdrop (kaala parda) fade effect */
     .drawer-backdrop {
-      transition: background 0.3s ease, pointer-events 0.3s;
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: rgba(0, 0, 0, 0);
+      transition: background 0.3s ease;
       pointer-events: none;
+      visibility: hidden;
     }
 
     .drawer-backdrop.active {
       background: rgba(0, 0, 0, 0.4) !important;
       pointer-events: auto !important;
+      visibility: visible;
     }
 
     *,
@@ -141,6 +147,10 @@
       --nav-height: 48px;
     }
 
+    html {
+      overflow-x: hidden;
+    }
+
     body {
       font-family: 'Poppins', sans-serif;
       color: var(--text-dark);
@@ -148,6 +158,8 @@
       font-size: 14px;
       line-height: 1.6;
       padding-bottom: 80px;
+      overflow-x: hidden;
+      width: 100%;
     }
 
     body.cart-active {
@@ -157,6 +169,7 @@
     body.cart-open {
       overflow: hidden;
       height: 100vh;
+      width: 100%;
     }
 
     a {
@@ -1330,7 +1343,12 @@
 
       .featured-row {
         width: max-content;
+        max-width: none;
         padding-right: 20px;
+      }
+
+      .featured-strip {
+        overflow-x: hidden;
       }
 
       .featured-row .prod-card {
@@ -2509,7 +2527,7 @@
 
   <!-- BOTTOM CART BAR -->
   <div class="blinkit-cart-bar" id="cartBar"
-    style="position:fixed;bottom:0;left:50%;width:90%;max-width:1200px;background:white;border-top:2px solid var(--green-cta);border-radius:10px 10px 0 0;padding:12px 16px;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:999;">
+    style="position:fixed;bottom:0;left:0;right:0;width:90%;max-width:1200px;margin:0 auto;background:white;border-top:2px solid var(--green-cta);border-radius:10px 10px 0 0;padding:12px 16px;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:999;">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <div>
         <div style="font-size:12px;color:var(--text-muted);">Total Items: <span id="cartCount"
