@@ -71,7 +71,23 @@
 
     /* 5. Cart Drawer (Slide-out panel) smooth transition */
     .cart-drawer {
-      transition: right 0.4s cubic-bezier(0.075, 0.82, 0.165, 1) !important;
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 400px;
+      height: 100vh;
+      background: white;
+      box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+      z-index: 1000;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.075, 0.82, 0.165, 1) !important;
+    }
+
+    .cart-drawer.open {
+      transform: translateX(0);
     }
 
     /* 6. Drawer ke andar items ka ek-ek karke slide hona */
@@ -136,6 +152,11 @@
 
     body.cart-active {
       padding-bottom: 120px;
+    }
+
+    body.cart-open {
+      overflow: hidden;
+      height: 100vh;
     }
 
     a {
@@ -1321,7 +1342,6 @@
 
       .cart-drawer {
         width: 100%;
-        right: -100% !important;
       }
 
       .blinkit-cart-bar {
@@ -2379,8 +2399,7 @@
   <div class="drawer-backdrop" id="cartBackdrop"></div>
 
   <!-- CART DRAWER (multi-step: Cart → Details → Success) -->
-  <div class="cart-drawer" id="cartDrawer"
-    style="position:fixed;right:-400px;top:0;width:400px;height:100vh;background:white;box-shadow:-2px 0 10px rgba(0,0,0,0.1);z-index:1000;overflow:hidden;display:flex;flex-direction:column;">
+  <div class="cart-drawer" id="cartDrawer">
 
     <!-- ── STEP 1: Cart Items ── -->
     <div id="drawerStep1" style="display:flex;flex-direction:column;height:100%;">
@@ -2835,15 +2854,17 @@
       openDrawer() {
         const drawer = document.getElementById('cartDrawer');
         const backdrop = document.getElementById('cartBackdrop');
-        drawer.style.right = '0';
+        drawer.classList.add('open');
         backdrop.classList.add('active');
+        document.body.classList.add('cart-open');
       }
 
       closeDrawer() {
         const drawer = document.getElementById('cartDrawer');
         const backdrop = document.getElementById('cartBackdrop');
-        drawer.style.right = '-400px';
+        drawer.classList.remove('open');
         backdrop.classList.remove('active');
+        document.body.classList.remove('cart-open');
       }
     }
 
