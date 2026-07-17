@@ -1,4 +1,5 @@
 const http = require('http');
+const helmet = require('helmet'); // security headers
 const fs = require('fs/promises'); // still needed: serveStatic() reads html/css/images from disk
 const path = require('path');
 const { URL } = require('url');
@@ -16,6 +17,17 @@ const adminPassword = process.env.ADMIN_PASSWORD || 'Swadeshi@2026';
 const sessions = new Map();
 
 
+// ---------------------------------------------------------------------------
+// Security headers (Helmet) – adds CSP, HSTS, etc.
+app.use((req, res, next) => {
+  // Basic security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Content Security Policy – only allow scripts/styles from self and trusted CDNs
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com");
+  next();
+});
 // ---------------------------------------------------------------------------
 // small helpers
 // ---------------------------------------------------------------------------
@@ -456,6 +468,38 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/logout' && req.method === 'POST') {
       const cookies = parseCookies(req.headers.cookie);
+      // Admin logout – clear session and cookie
+      const cookies = parseCookies(req.headers.cookie);
+      if (cookies.swadeshi_admin_session) {
+        sessions.delete(cookies.swadeshi_admin_session);
+      }
+      clearSessionCookie(res);
+      return sendJson(res, 200, { ok: true });
+        toggle.textContent = currentLanguage === 'hi' ? 'EN' : 'हि';
+        toggle.title = currentLanguage === 'hi' ? 'Switch to English' : 'हिंदी में बदलें';
+      }
+      setText('.topbar', 'Free delivery on orders above ₹499 | Use code NATURAL10 for 10% off your first order');
+      const searchInput = document.querySelector('.search-bar input');
+      if (searchInput) searchInput.placeholder = t('Search for products...');
+      setText('.search-bar button', 'Search');
+      const login = document.querySelector('.header-icons a[href="login.html"]');
+      // Hide admin‑only UI for non‑admin users
+      const adminLink = document.querySelector('.header-icons a[href="admin.html"]');
+      if (login) login.lastChild.textContent = ' ' + t('Login');
+      // Decode JWT to determine role (client‑side only for UI tweaks)
+      function getJwtPayload(){
+        const match = document.cookie.match(/customer_jwt=([^;]+)/);
+        if (!match) return null;
+        try { const payload = atob(match[1].split('.')[1]); return JSON.parse(payload); } catch(e){ return null; }
+      }
+      const payload = getJwtPayload();
+      if (payload && payload.role !== 'admin' && adminLink) adminLink.style.display = 'none';
+      updateHeaderCartLabel();
+      const navLabels = ['☰', 'Cosmetics', 'Pooja Items', 'Product', 'Instant Breakfast Items', 'Time Saving', 'Pickle, Jam & Chutney', 'Home Care'];
+      document.querySelectorAll('nav a').forEach((el, i) => { if (navLabels[i]) el.textContent = navLabels[i] === '☰' ? '☰' : t(navLabels[i]); });
+      setText('.hero-eyebrow', '100% Natural & Organic');
+      const h1 = document.querySelector('.hero h1');
+      if (h1) h1.innerHTML = currentLanguage === 'hi' ? 'ऑर्गेनिक वेलनेस के साथ <em>बेहतर महसूस करें</em>' : 'Feel better, live fully with <em>organic wellness</em>';
       if (cookies.swadeshi_admin_session) {
         sessions.delete(cookies.swadeshi_admin_session);
       }
