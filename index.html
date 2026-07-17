@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js" async defer></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Swadeshi Natural Products</title>
@@ -2951,6 +2951,7 @@
     });
 
     async function placeOrder() {
+      console.log('1. Pay Now clicked, starting validation');
       const name = document.getElementById('co-name').value.trim();
       const phone = document.getElementById('co-phone').value.trim();
       const email = document.getElementById('co-email').value.trim();
@@ -2971,17 +2972,30 @@
       btn.textContent = 'Starting Payment...';
 
       try {
+        console.log('2. Requesting order creation from backend');
+        
+        // Setup timeout for fetch
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 seconds timeout
+
         // 1. Ask our backend to create a Razorpay order for this amount
         const payRes = await fetch(API_BASE + '/api/payment/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: total })
+          body: JSON.stringify({ amount: total }),
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
+        
         const payData = await payRes.json();
+        console.log('3. Backend response received:', payData);
+        
         if (!payRes.ok || !payData.id) {
           throw new Error(payData.error || 'Could not start payment. Please try again.');
         }
 
+        console.log('4. Initializing Razorpay checkout modal');
         // 2. Open the Razorpay payment popup
         const rzp = new Razorpay({
           key: RAZORPAY_KEY_ID,
@@ -2993,6 +3007,7 @@
           prefill: { name: name, email: email, contact: phone },
           theme: { color: '#6b7a3f' },
           handler: async function (response) {
+            console.log('5. Payment succeeded, verifying & saving to backend');
             // 3. Payment succeeded — now save the order in our database
             btn.textContent = 'Saving Order...';
             try {
@@ -3020,6 +3035,7 @@
                 throw new Error('Payment succeeded but saving the order failed. Please contact us with your payment ID: ' + response.razorpay_payment_id);
               }
 
+              console.log('6. Order saved successfully');
               const orderId = orderData.order && orderData.order.id ? orderData.order.id : '';
               document.getElementById('successOrderId').textContent = orderId ? `Order ID: ${orderId}` : 'Order placed successfully.';
               document.getElementById('checkoutForm').style.display = 'none';
@@ -3037,6 +3053,7 @@
           },
           modal: {
             ondismiss: function () {
+              console.log('Razorpay modal dismissed by user');
               btn.disabled = false;
               btn.textContent = 'Place Order →';
             }
@@ -3054,7 +3071,17 @@
 
       } catch (err) {
         console.error('Order failed:', err);
-        alert(err.message || 'Something went wrong. Please try again or call us directly.');
+        
+        let errorMsg = 'Something went wrong. Please try again or call us directly.';
+        if (err.name === 'AbortError') {
+          errorMsg = 'Payment request timed out. Please check your internet connection and try again.';
+        } else if (err.message && err.message.includes('Failed to fetch')) {
+          errorMsg = 'Network error. Please check your connection and try again.';
+        } else if (err.message) {
+          errorMsg = err.message;
+        }
+        
+        alert(errorMsg);
         btn.disabled = false;
         btn.textContent = 'Place Order →';
       }

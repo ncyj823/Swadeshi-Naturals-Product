@@ -2944,6 +2944,7 @@
     });
 
     async function placeOrder() {
+      console.log('1. Pay Now clicked, starting validation');
       const name = document.getElementById('co-name').value.trim();
       const phone = document.getElementById('co-phone').value.trim();
       const email = document.getElementById('co-email').value.trim();
@@ -2957,40 +2958,123 @@
 
       const items = cartManager.getCartItems();
       const total = cartManager.getTotal();
+      if (!items.length) { alert('Your cart is empty.'); return; }
 
       const btn = document.getElementById('placeOrderBtn');
       btn.disabled = true;
-      btn.textContent = 'Placing Order...';
+      btn.textContent = 'Starting Payment...';
 
       try {
-        const itemsText = items.map(i => `${i.title} x${i.quantity} @ ₹${i.price}`).join(', ');
+        console.log('2. Requesting order creation from backend');
+        
+        // Setup timeout for fetch
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 seconds timeout
 
-        const { data, error } = await db.from('orders').insert([{
-          customer_name: name,
-          customer_email: email || null,
-          customer_phone: phone,
-          items: itemsText,
-          total_price: total,
-          status: 'Pending',
-          notes: notes || null,
-          delivery_address: address
-        }]).select();
+        // 1. Ask our backend to create a Razorpay order for this amount
+        const payRes = await fetch(API_BASE + '/api/payment/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: total }),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        const payData = await payRes.json();
+        console.log('3. Backend response received:', payData);
+        
+        if (!payRes.ok || !payData.id) {
+          throw new Error(payData.error || 'Could not start payment. Please try again.');
+        }
 
-        if (error) throw error;
+        console.log('4. Initializing Razorpay checkout modal');
+        // 2. Open the Razorpay payment popup
+        const rzp = new Razorpay({
+          key: RAZORPAY_KEY_ID,
+          amount: payData.amount,
+          currency: payData.currency || 'INR',
+          name: 'Swadeshi Natural Products',
+          description: 'Order payment',
+          order_id: payData.id,
+          prefill: { name: name, email: email, contact: phone },
+          theme: { color: '#6b7a3f' },
+          handler: async function (response) {
+            console.log('5. Payment succeeded, verifying & saving to backend');
+            // 3. Payment succeeded — now save the order in our database
+            btn.textContent = 'Saving Order...';
+            try {
+              const itemDetails = items.map(function (item) {
+                return { id: item.id, name: item.title, quantity: item.quantity, price: item.price };
+              });
 
-        // Success!
-        const orderId = data?.[0]?.id ? `#ORD-${String(data[0].id).padStart(3, '0')}` : '#ORD-NEW';
-        document.getElementById('successOrderId').textContent = `Order ID: ${orderId}`;
-        document.getElementById('checkoutForm').style.display = 'none';
-        document.getElementById('checkoutSuccess').style.display = 'block';
+              const orderRes = await fetch(API_BASE + '/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  customer: name,
+                  customerPhone: phone,
+                  customerEmail: email,
+                  address: address,
+                  notes: (notes ? notes + ' | ' : '') + 'razorpay_payment_id: ' + response.razorpay_payment_id,
+                  itemDetails: itemDetails,
+                  amount: total,
+                  paymentStatus: 'Completed',
+                  status: 'Paid'
+                })
+              });
+              const orderData = await orderRes.json();
+              if (!orderRes.ok || !orderData.ok) {
+                throw new Error('Payment succeeded but saving the order failed. Please contact us with your payment ID: ' + response.razorpay_payment_id);
+              }
 
-        // Clear cart
-        cartManager.cart = {};
-        cartManager.saveCart();
+              console.log('6. Order saved successfully');
+              const orderId = orderData.order && orderData.order.id ? orderData.order.id : '';
+              document.getElementById('successOrderId').textContent = orderId ? `Order ID: ${orderId}` : 'Order placed successfully.';
+              document.getElementById('checkoutForm').style.display = 'none';
+              document.getElementById('checkoutSuccess').style.display = 'block';
+
+              // Clear cart
+              cartManager.cart = {};
+              cartManager.saveCart();
+            } catch (saveErr) {
+              console.error('Order save failed:', saveErr);
+              alert(saveErr.message);
+              btn.disabled = false;
+              btn.textContent = 'Place Order →';
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              console.log('Razorpay modal dismissed by user');
+              btn.disabled = false;
+              btn.textContent = 'Place Order →';
+            }
+          }
+        });
+
+        rzp.on('payment.failed', function (response) {
+          console.error('Payment failed:', response.error);
+          alert('Payment failed: ' + response.error.description);
+          btn.disabled = false;
+          btn.textContent = 'Place Order →';
+        });
+
+        rzp.open();
 
       } catch (err) {
         console.error('Order failed:', err);
-        alert('Something went wrong. Please try again or call us directly.');
+        
+        let errorMsg = 'Something went wrong. Please try again or call us directly.';
+        if (err.name === 'AbortError') {
+          errorMsg = 'Payment request timed out. Please check your internet connection and try again.';
+        } else if (err.message && err.message.includes('Failed to fetch')) {
+          errorMsg = 'Network error. Please check your connection and try again.';
+        } else if (err.message) {
+          errorMsg = err.message;
+        }
+        
+        alert(errorMsg);
         btn.disabled = false;
         btn.textContent = 'Place Order →';
       }
