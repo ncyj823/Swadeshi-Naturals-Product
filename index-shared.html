@@ -3067,8 +3067,6 @@
           modal: {
             ondismiss: function () {
               console.log('Razorpay modal dismissed by user');
-              btn.disabled = false;
-              btn.textContent = 'Place Order →';
             }
           }
         });
@@ -3076,8 +3074,6 @@
         rzp.on('payment.failed', function (response) {
           console.error('Payment failed:', response.error);
           alert('Payment failed: ' + response.error.description);
-          btn.disabled = false;
-          btn.textContent = 'Place Order →';
         });
 
         rzp.open();
@@ -3095,8 +3091,11 @@
         }
         
         alert(errorMsg);
+      } finally {
         btn.disabled = false;
-        btn.textContent = 'Place Order →';
+        if (btn.textContent === 'Starting Payment...') {
+          btn.textContent = 'Place Order →';
+        }
       }
     }
 
