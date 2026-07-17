@@ -2943,8 +2943,28 @@
       if (e.target === this) closeCheckout();
     });
 
+
+    // Preload Razorpay on page load
+    let isRazorpayLoading = false;
+    function preloadRazorpay() {
+      if (window.Razorpay || isRazorpayLoading) return;
+      isRazorpayLoading = true;
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => console.log('Razorpay loaded early');
+      document.body.appendChild(script);
+    }
+    window.addEventListener('DOMContentLoaded', preloadRazorpay);
+
     async function placeOrder() {
       console.log('1. Pay Now clicked, starting validation');
+      
+      const btn = document.getElementById('placeOrderBtn');
+      
+      if (!window.Razorpay) {
+        alert("Payment gateway is still loading. Please wait a second and try again.");
+        return;
+      }
       const name = document.getElementById('co-name').value.trim();
       const phone = document.getElementById('co-phone').value.trim();
       const email = document.getElementById('co-email').value.trim();
