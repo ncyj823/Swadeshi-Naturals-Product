@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Swadeshi Natural Products</title>
@@ -2869,11 +2870,9 @@
 
   <script>
     // ══════════════════════════════════════
-    // SUPABASE CONNECTION
+    // RAZORPAY PUBLIC KEY (key_id is safe to expose client-side; the secret stays server-only)
     // ══════════════════════════════════════
-    const SUPABASE_URL = "PASTE_YOUR_PROJECT_URL_HERE";
-    const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_PUBLIC_KEY_HERE";
-    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const RAZORPAY_KEY_ID = "rzp_test_TDpdOQ8wirOf0v";
 
     // ══════════════════════════════════════
     // CHECKOUT FUNCTIONS
@@ -2926,40 +2925,97 @@
 
       const items = cartManager.getCartItems();
       const total = cartManager.getTotal();
+      if (!items.length) { alert('Your cart is empty.'); return; }
 
       const btn = document.getElementById('placeOrderBtn');
       btn.disabled = true;
-      btn.textContent = 'Placing Order...';
+      btn.textContent = 'Starting Payment...';
 
       try {
-        const itemsText = items.map(i => `${i.title} x${i.quantity} @ ₹${i.price}`).join(', ');
+        // 1. Ask our backend to create a Razorpay order for this amount
+        const payRes = await fetch(API_BASE + '/api/payment/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: total })
+        });
+        const payData = await payRes.json();
+        if (!payRes.ok || !payData.id) {
+          throw new Error(payData.error || 'Could not start payment. Please try again.');
+        }
 
-        const { data, error } = await db.from('orders').insert([{
-          customer_name: name,
-          customer_email: email || null,
-          customer_phone: phone,
-          items: itemsText,
-          total_price: total,
-          status: 'Pending',
-          notes: notes || null,
-          delivery_address: address
-        }]).select();
+        // 2. Open the Razorpay payment popup
+        const rzp = new Razorpay({
+          key: RAZORPAY_KEY_ID,
+          amount: payData.amount,
+          currency: payData.currency || 'INR',
+          name: 'Swadeshi Natural Products',
+          description: 'Order payment',
+          order_id: payData.id,
+          prefill: { name: name, email: email, contact: phone },
+          theme: { color: '#6b7a3f' },
+          handler: async function (response) {
+            // 3. Payment succeeded — now save the order in our database
+            btn.textContent = 'Saving Order...';
+            try {
+              const itemDetails = items.map(function (item) {
+                return { id: item.id, name: item.title, quantity: item.quantity, price: item.price };
+              });
 
-        if (error) throw error;
+              const orderRes = await fetch(API_BASE + '/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  customer: name,
+                  customerPhone: phone,
+                  customerEmail: email,
+                  address: address,
+                  notes: (notes ? notes + ' | ' : '') + 'razorpay_payment_id: ' + response.razorpay_payment_id,
+                  itemDetails: itemDetails,
+                  amount: total,
+                  paymentStatus: 'Completed',
+                  status: 'Paid'
+                })
+              });
+              const orderData = await orderRes.json();
+              if (!orderRes.ok || !orderData.ok) {
+                throw new Error('Payment succeeded but saving the order failed. Please contact us with your payment ID: ' + response.razorpay_payment_id);
+              }
 
-        // Success!
-        const orderId = data?.[0]?.id ? `#ORD-${String(data[0].id).padStart(3, '0')}` : '#ORD-NEW';
-        document.getElementById('successOrderId').textContent = `Order ID: ${orderId}`;
-        document.getElementById('checkoutForm').style.display = 'none';
-        document.getElementById('checkoutSuccess').style.display = 'block';
+              const orderId = orderData.order && orderData.order.id ? orderData.order.id : '';
+              document.getElementById('successOrderId').textContent = orderId ? `Order ID: ${orderId}` : 'Order placed successfully.';
+              document.getElementById('checkoutForm').style.display = 'none';
+              document.getElementById('checkoutSuccess').style.display = 'block';
 
-        // Clear cart
-        cartManager.cart = {};
-        cartManager.saveCart();
+              // Clear cart
+              cartManager.cart = {};
+              cartManager.saveCart();
+            } catch (saveErr) {
+              console.error('Order save failed:', saveErr);
+              alert(saveErr.message);
+              btn.disabled = false;
+              btn.textContent = 'Place Order →';
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              btn.disabled = false;
+              btn.textContent = 'Place Order →';
+            }
+          }
+        });
+
+        rzp.on('payment.failed', function (response) {
+          console.error('Payment failed:', response.error);
+          alert('Payment failed: ' + response.error.description);
+          btn.disabled = false;
+          btn.textContent = 'Place Order →';
+        });
+
+        rzp.open();
 
       } catch (err) {
         console.error('Order failed:', err);
-        alert('Something went wrong. Please try again or call us directly.');
+        alert(err.message || 'Something went wrong. Please try again or call us directly.');
         btn.disabled = false;
         btn.textContent = 'Place Order →';
       }
@@ -3319,10 +3375,13 @@
 
     function renderOrderCard(order) {
       const steps = getStatusSteps(order.status || 'Pending');
-      const orderId = order.id ? `#ORD-${String(order.id).padStart(3, '0')}` : '#ORD-???';
-      const date = order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
-      const amount = order.total_price ? `₹${Number(order.total_price).toFixed(2)}` : '';
+      const orderId = order.id ? `#${order.id}` : '#ORD-???';
+      const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+      const amount = order.amount ? `₹${Number(order.amount).toFixed(2)}` : '';
       const isCancelled = order.status === 'Cancelled';
+      const itemsText = Array.isArray(order.itemDetails) && order.itemDetails.length
+        ? order.itemDetails.map(function (i) { return `${i.name || 'Item'} x${i.quantity} @ ₹${i.price}`; }).join(', ')
+        : '';
       return `
     <div class="ot-order-card">
       <div class="ot-order-top">
@@ -3346,8 +3405,8 @@
       <div style="padding:14px 18px;background:#fdecea;border-top:1px solid #f5c6c2;">
         <p style="font-size:12px;color:#d33;font-weight:600;">❌ This order was cancelled.</p>
       </div>`}
-      ${order.items ? `<div class="ot-order-items"><strong style="color:var(--brown-dark);">Items:</strong> ${order.items}</div>` : ''}
-      ${order.delivery_address ? `<div class="ot-order-address"><span>📍</span><span>${order.delivery_address}</span></div>` : ''}
+      ${itemsText ? `<div class="ot-order-items"><strong style="color:var(--brown-dark);">Items:</strong> ${itemsText}</div>` : ''}
+      ${order.address ? `<div class="ot-order-address"><span>📍</span><span>${order.address}</span></div>` : ''}
     </div>`;
     }
 
@@ -3360,17 +3419,19 @@
       }
       resultsEl.innerHTML = `<div class="ot-loading">🔍 Looking up your orders...</div>`;
       try {
-        const { data, error } = await db.from('orders').select('*').eq('customer_phone', phone).order('created_at', { ascending: false });
-        if (error) throw error;
-        if (!data || data.length === 0) {
+        const res = await fetch(API_BASE + '/api/orders/track?q=' + encodeURIComponent(phone));
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || 'Something went wrong.');
+        const orders = data.orders || [];
+        if (orders.length === 0) {
           resultsEl.innerHTML = `<div class="ot-empty"><div class="icon">📦</div><p>No orders found for this number.</p><p style="font-size:12px;margin-top:6px;">Make sure you used the same number while ordering.</p></div>`;
           return;
         }
         resultsEl.innerHTML = `
       <p style="font-size:13px;font-weight:600;color:var(--brown-dark);margin-bottom:14px;">
-        Found ${data.length} order${data.length > 1 ? 's' : ''} for your number:
+        Found ${orders.length} order${orders.length > 1 ? 's' : ''} for your number:
       </p>
-      <div class="ot-orders-list">${data.map(renderOrderCard).join('')}</div>`;
+      <div class="ot-orders-list">${orders.map(renderOrderCard).join('')}</div>`;
       } catch (err) {
         console.error(err);
         resultsEl.innerHTML = `<div class="ot-empty"><div class="icon">⚠️</div><p>Something went wrong. Please try again.</p></div>`;
