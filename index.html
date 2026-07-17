@@ -2257,31 +2257,98 @@
   <!-- CART DRAWER BACKDROP -->
   <div class="drawer-backdrop" id="cartBackdrop"></div>
 
-  <!-- CART DRAWER -->
+  <!-- CART DRAWER (multi-step: Cart → Details → Success) -->
   <div class="cart-drawer" id="cartDrawer"
-    style="position:fixed;right:-400px;top:0;width:400px;height:100vh;background:white;box-shadow:-2px 0 10px rgba(0,0,0,0.1);z-index:1000;overflow-y:auto;display:flex;flex-direction:column;">
-    <div
-      style="padding:20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
-      <h3 style="font-size:18px;font-weight:700;color:var(--brown--dark);">Your Cart</h3>
-      <button id="closeCartBtn"
-        style="background:none;border:none;cursor:pointer;font-size:24px;color:var(--brown-dark);">✕</button>
-    </div>
-    <div id="cartItems" style="flex:1;overflow-y:auto;padding:16px;"></div>
-    <div id="cartEmpty"
-      style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-muted);text-align:center;">
-      <div style="font-size:48px;margin-bottom:12px;">🛒</div>
-      <p>Your cart is empty</p>
-      <p style="font-size:12px;">Add items to get started</p>
-    </div>
-    <div id="cartFooter" style="padding:20px;border-top:1px solid var(--border);flex-shrink:0;display:none;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:14px;font-weight:600;">
-        <span>Total:</span>
-        <span id="cartTotal" style="color:var(--brown-dark);">₹0.00</span>
+    style="position:fixed;right:-400px;top:0;width:400px;height:100vh;background:white;box-shadow:-2px 0 10px rgba(0,0,0,0.1);z-index:1000;overflow:hidden;display:flex;flex-direction:column;">
+
+    <!-- ── STEP 1: Cart Items ── -->
+    <div id="drawerStep1" style="display:flex;flex-direction:column;height:100%;">
+      <div style="padding:20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+        <h3 style="font-size:18px;font-weight:700;color:var(--brown-dark);">Your Cart</h3>
+        <button id="closeCartBtn" style="background:none;border:none;cursor:pointer;font-size:24px;color:var(--brown-dark);">&#x2715;</button>
       </div>
-      <button onclick="openCheckout()"
-        style="width:100%;background:var(--green-cta);color:white;padding:12px;border-radius:6px;font-weight:600;font-size:14px;cursor:pointer;border:none;">Proceed
-        to Checkout →</button>
+      <div id="cartItems" style="flex:1;overflow-y:auto;padding:16px;"></div>
+      <div id="cartEmpty" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-muted);text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">&#x1F6D2;</div>
+        <p>Your cart is empty</p>
+        <p style="font-size:12px;">Add items to get started</p>
+      </div>
+      <div id="cartFooter" style="padding:20px;border-top:1px solid var(--border);flex-shrink:0;display:none;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:14px;font-weight:600;">
+          <span>Total:</span>
+          <span id="cartTotal" style="color:var(--brown-dark);">&#x20B9;0.00</span>
+        </div>
+        <button onclick="openCheckout()"
+          style="width:100%;background:var(--green-cta);color:white;padding:13px;border-radius:6px;font-weight:700;font-size:14px;cursor:pointer;border:none;">
+          Proceed to Details &rarr;
+        </button>
+      </div>
     </div>
+
+    <!-- ── STEP 2: Details Form ── -->
+    <div id="checkoutForm" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:white;">
+        <button onclick="closeCheckout()" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--brown-dark);font-weight:700;padding:6px 0;display:flex;align-items:center;gap:4px;">&larr; Back</button>
+        <h3 style="font-size:16px;font-weight:700;color:var(--brown-dark);">Your Details</h3>
+        <button onclick="cartManager.closeDrawer()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--text-muted);">&#x2715;</button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:20px;">
+        <div class="checkout-order-summary">
+          <div class="summary-title">&#x1F6D2; Order Summary</div>
+          <div id="checkoutSummaryItems"></div>
+          <div class="summary-total">
+            <span>Total</span>
+            <span id="checkoutSummaryTotal">&#x20B9;0.00</span>
+          </div>
+        </div>
+        <div class="co-field-row">
+          <div class="co-field">
+            <label>Full Name *</label>
+            <input type="text" id="co-name" placeholder="Your full name" />
+          </div>
+          <div class="co-field">
+            <label>Phone Number *</label>
+            <input type="tel" id="co-phone" placeholder="10-digit mobile number" />
+          </div>
+        </div>
+        <div class="co-field">
+          <label>Email Address</label>
+          <input type="email" id="co-email" placeholder="Optional &mdash; for order confirmation" />
+        </div>
+        <div class="co-field">
+          <label>Delivery Address *</label>
+          <textarea id="co-address" placeholder="House/Flat No, Street, Area, City, Pincode"></textarea>
+        </div>
+        <div class="co-field">
+          <label>Special Instructions</label>
+          <input type="text" id="co-notes" placeholder="Optional &mdash; any special instructions" />
+        </div>
+      </div>
+      <div style="padding:16px 20px;border-top:1px solid var(--border);flex-shrink:0;background:white;">
+        <button class="btn-place-order" id="placeOrderBtn" onclick="placeOrder()" style="width:100%;">
+          Place Order &amp; Pay &rarr;
+        </button>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: Success ── -->
+    <div id="checkoutSuccess" style="display:none;height:100%;overflow-y:auto;">
+      <div class="checkout-success">
+        <div class="success-icon">&#x1F389;</div>
+        <h3>Order Placed Successfully!</h3>
+        <p>Thank you for shopping with Swadeshi Natural Products.</p>
+        <p>We'll contact you shortly to confirm your order.</p>
+        <div class="order-id-badge" id="successOrderId"></div>
+        <p style="font-size:12px;color:var(--text-muted);">
+          &#x1F4DE; Office Timing: 9:00 AM &ndash; 8:00 PM<br>
+          &#x1F69A; Free delivery on orders above &#x20B9;499
+        </p>
+        <button class="btn-continue-shopping" onclick="finishCheckout()">
+          Continue Shopping
+        </button>
+      </div>
+    </div>
+
   </div>
 
   <!-- BOTTOM CART BAR -->
@@ -2828,19 +2895,6 @@
     });
   </script>
 
-  <!-- ══════════════════════════════════════
-     CHECKOUT MODAL
-══════════════════════════════════════ -->
-  <div class="checkout-overlay" id="checkoutOverlay">
-    <div class="checkout-modal" id="checkoutModal">
-
-      <!-- Form View -->
-      <div id="checkoutForm">
-        <div class="checkout-header">
-          <h3>Complete Your Order</h3>
-          <button class="checkout-close" onclick="closeCheckout()">✕</button>
-        </div>
-
         <div class="checkout-body">
           <!-- Order Summary -->
           <div class="checkout-order-summary">
@@ -2919,35 +2973,28 @@
       const items = cartManager.getCartItems();
       if (!items.length) return;
 
-      // Populate summary
-      document.getElementById('checkoutSummaryItems').innerHTML = items.map(item => `
-    <div class="summary-item">
-      <span>${escapeHtml(item.title)} × ${item.quantity}</span>
-      <span>₹${(item.price * item.quantity).toFixed(2)}</span>
-    </div>
-  `).join('');
-      document.getElementById('checkoutSummaryTotal').textContent = `₹${cartManager.getTotal().toFixed(2)}`;
+      // Populate order summary
+      document.getElementById('checkoutSummaryItems').innerHTML = items.map(function(item) {
+        return '<div class="summary-item"><span>' + escapeHtml(item.title) + ' &times; ' + item.quantity + '</span><span>&#x20B9;' + (item.price * item.quantity).toFixed(2) + '</span></div>';
+      }).join('');
+      document.getElementById('checkoutSummaryTotal').textContent = '\u20B9' + cartManager.getTotal().toFixed(2);
 
-      // Reset form
-      document.getElementById('checkoutForm').style.display = 'block';
-      document.getElementById('checkoutSuccess').style.display = 'none';
-      ['co-name', 'co-phone', 'co-email', 'co-address', 'co-notes'].forEach(id => {
+      // Reset form fields
+      ['co-name', 'co-phone', 'co-email', 'co-address', 'co-notes'].forEach(function(id) {
         document.getElementById(id).value = '';
       });
 
-      // Show overlay
-      document.getElementById('checkoutOverlay').classList.add('open');
-      cartManager.closeDrawer();
+      // Show Step 2 inside the drawer — keep drawer open
+      document.getElementById('drawerStep1').style.display = 'none';
+      document.getElementById('checkoutForm').style.display = 'flex';
+      document.getElementById('checkoutSuccess').style.display = 'none';
     }
 
     function closeCheckout() {
-      document.getElementById('checkoutOverlay').classList.remove('open');
+      document.getElementById('drawerStep1').style.display = 'flex';
+      document.getElementById('checkoutForm').style.display = 'none';
+      document.getElementById('checkoutSuccess').style.display = 'none';
     }
-
-    // Close on backdrop click
-    document.getElementById('checkoutOverlay').addEventListener('click', function (e) {
-      if (e.target === this) closeCheckout();
-    });
 
 
     // Preload Razorpay on page load
@@ -3106,7 +3153,7 @@
     }
 
     function finishCheckout() {
-      closeCheckout();
+      cartManager.closeDrawer();
     }
   </script>
   <!-- ══════════════════════════════════════
