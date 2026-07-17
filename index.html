@@ -2971,6 +2971,7 @@
         alert("Payment gateway is still loading. Please wait a second and try again.");
         return;
       }
+
       const name = document.getElementById('co-name').value.trim();
       const phone = document.getElementById('co-phone').value.trim();
       const email = document.getElementById('co-email').value.trim();
@@ -2986,7 +2987,6 @@
       const total = cartManager.getTotal();
       if (!items.length) { alert('Your cart is empty.'); return; }
 
-      const btn = document.getElementById('placeOrderBtn');
       btn.disabled = true;
       btn.textContent = 'Starting Payment...';
 
