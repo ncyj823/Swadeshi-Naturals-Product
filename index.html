@@ -2052,13 +2052,17 @@
           </svg>
           My Orders
         </a>
-        <a href="login.html">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8" width="20" height="20">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          Login
-        </a>
+
+        <div id="auth-link-container">
+          <a href="/api/auth/google">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8" width="20" height="20">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Google Login
+          </a>
+        </div>
+
         <button class="lang-toggle" id="languageToggle" type="button" aria-label="Switch language"
           title="Switch language">हि</button>
         <a href="#" class="cart-btn">
@@ -2637,8 +2641,7 @@
       const searchInput = document.querySelector('.search-bar input');
       if (searchInput) searchInput.placeholder = t('Search for products...');
       setText('.search-bar button', 'Search');
-      const login = document.querySelector('.header-icons a[href="login.html"]');
-      if (login) login.lastChild.textContent = ' ' + t('Login');
+
       updateHeaderCartLabel();
       const navLabels = ['☰', 'Cosmetics', 'Pooja Items', 'Product', 'Instant Breakfast Items', 'Time Saving', 'Pickle, Jam & Chutney', 'Home Care'];
       document.querySelectorAll('nav a').forEach((el, i) => { if (navLabels[i]) el.textContent = navLabels[i] === '☰' ? '☰' : t(navLabels[i]); });
@@ -3744,8 +3747,25 @@
         resultsEl.innerHTML = `<div class="ot-empty"><div class="icon">⚠️</div><p>Something went wrong. Please try again.</p></div>`;
       }
     }
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Check if logged in
+      const cookies = document.cookie;
+      if (cookies.includes('customer_jwt=')) {
+        const authContainer = document.getElementById('auth-link-container');
+        if (authContainer) {
+          authContainer.innerHTML = `
+            <a href="/profile.html">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8" width="20" height="20">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              My Profile
+            </a>
+          `;
+        }
+      }
+    });
   </script>
-
 </body>
 
 </html>

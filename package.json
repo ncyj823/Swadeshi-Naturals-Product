@@ -7,9 +7,13 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "pg": "^8.22.0",
-    "razorpay": "^2.9.8",
     "bcrypt": "^5.1.0",
-    "jsonwebtoken": "^9.0.0"
+    "connect-pg-simple": "^10.0.0",
+    "express-session": "^1.19.0",
+    "jsonwebtoken": "^9.0.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.22.0",
+    "razorpay": "^2.9.8"
   }
 }

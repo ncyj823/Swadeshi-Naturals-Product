@@ -8,7 +8,7 @@ const pool = require('./db');
 const razorpay = require("./razorpay");
 
 // Customer authentication utilities
-const { hashPassword, verifyPassword, createCustomerToken, verifyCustomerToken } = require('./auth');
+const { hashPassword, verifyPassword, createCustomerToken, verifyCustomerToken, getGoogleTokens, getGoogleUser } = require('./auth');
 
 const rootDir = __dirname;
 const port = Number(process.env.PORT || 3000);
@@ -102,7 +102,11 @@ function requireCustomer(req, res) {
   const cookies = parseCookies(req.headers.cookie);
   const token = cookies.customer_jwt;
   if (!token) {
-    res.writeHead(302, { Location: '/login.html' });
+    if (req.url.startsWith('/api/')) {
+      sendJson(res, 401, { error: 'Unauthorized' });
+      return false;
+    }
+    res.writeHead(302, { Location: '/' });
     res.end();
     return false;
   }
@@ -111,7 +115,11 @@ function requireCustomer(req, res) {
     req.customerId = payload.customerId || payload.id;
     return true;
   } catch (e) {
-    res.writeHead(302, { Location: '/login.html' });
+    if (req.url.startsWith('/api/')) {
+      sendJson(res, 401, { error: 'Unauthorized' });
+      return false;
+    }
+    res.writeHead(302, { Location: '/' });
     res.end();
     return false;
   }
@@ -356,14 +364,14 @@ async function insertOrder(order) {
   const { rows } = await pool.query(
     `INSERT INTO orders
        (id, customer, customer_phone, customer_email, locality, address, notes,
-        items, item_details, amount, payment_status, status, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        items, item_details, amount, payment_status, status, created_at, user_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
      RETURNING *`,
     [
       order.id, order.customer, order.customerPhone, order.customerEmail,
       order.locality, order.address, order.notes, order.items,
       JSON.stringify(order.itemDetails), order.amount, order.paymentStatus,
-      order.status, order.createdAt
+      order.status, order.createdAt, order.userId || null
     ]
   );
   return rowToOrder(rows[0]);
@@ -456,6 +464,66 @@ const server = http.createServer(async (req, res) => {
 
   try {
     // ---- auth ----
+    if (pathname === '/api/auth/google' && req.method === 'GET') {
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      const redirectUri = `http://${req.headers.host}/api/auth/google/callback`;
+      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile`;
+      res.writeHead(302, { Location: url });
+      return res.end();
+    }
+
+    if (pathname === '/api/auth/google/callback' && req.method === 'GET') {
+      const code = requestUrl.searchParams.get('code');
+      if (!code) {
+        res.writeHead(302, { Location: '/' });
+        return res.end();
+      }
+      try {
+        const tokens = await getGoogleTokens({
+          code,
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          redirectUri: `http://${req.headers.host}/api/auth/google/callback`
+        });
+        const profile = await getGoogleUser(tokens);
+        
+        let result = await pool.query(`SELECT id FROM users WHERE google_id = $1 OR email = $2`, [profile.id, profile.email]);
+        let user = result.rows[0];
+        if (!user) {
+          const insertRes = await pool.query(
+            `INSERT INTO users (google_id, email, name, picture) VALUES ($1, $2, $3, $4) RETURNING id`,
+            [profile.id, profile.email, profile.name, profile.picture]
+          );
+          user = insertRes.rows[0];
+        } else {
+          await pool.query(
+            `UPDATE users SET google_id = $1, name = $2, picture = $3 WHERE id = $4 AND google_id IS NULL`,
+            [profile.id, profile.name, profile.picture, user.id]
+          );
+        }
+        
+        const token = createCustomerToken(user.id);
+        setCustomerCookie(res, token);
+        res.writeHead(302, { Location: '/profile.html' });
+        return res.end();
+      } catch (err) {
+        console.error('Google OAuth Error:', err);
+        res.writeHead(302, { Location: '/' });
+        return res.end();
+      }
+    }
+
+    if (pathname === '/api/customer/profile' && req.method === 'GET') {
+      if (!requireCustomer(req, res)) return;
+      const { rows } = await pool.query('SELECT name, email, picture, created_at FROM users WHERE id = $1', [req.customerId]);
+      return sendJson(res, 200, { user: rows[0] });
+    }
+
+    if (pathname === '/api/customer/orders' && req.method === 'GET') {
+      if (!requireCustomer(req, res)) return;
+      const { rows } = await pool.query('SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC', [req.customerId]);
+      return sendJson(res, 200, { orders: rows.map(rowToOrder) });
+    }
     if (pathname === '/api/login' && req.method === 'POST') {
       const body = await readBody(req);
       if (String(body.username || '') === adminUsername && String(body.password || '') === adminPassword) {
@@ -469,37 +537,6 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/logout' && req.method === 'POST') {
       const cookies = parseCookies(req.headers.cookie);
       // Admin logout – clear session and cookie
-      const cookies = parseCookies(req.headers.cookie);
-      if (cookies.swadeshi_admin_session) {
-        sessions.delete(cookies.swadeshi_admin_session);
-      }
-      clearSessionCookie(res);
-      return sendJson(res, 200, { ok: true });
-        toggle.textContent = currentLanguage === 'hi' ? 'EN' : 'हि';
-        toggle.title = currentLanguage === 'hi' ? 'Switch to English' : 'हिंदी में बदलें';
-      }
-      setText('.topbar', 'Free delivery on orders above ₹499 | Use code NATURAL10 for 10% off your first order');
-      const searchInput = document.querySelector('.search-bar input');
-      if (searchInput) searchInput.placeholder = t('Search for products...');
-      setText('.search-bar button', 'Search');
-      const login = document.querySelector('.header-icons a[href="login.html"]');
-      // Hide admin‑only UI for non‑admin users
-      const adminLink = document.querySelector('.header-icons a[href="admin.html"]');
-      if (login) login.lastChild.textContent = ' ' + t('Login');
-      // Decode JWT to determine role (client‑side only for UI tweaks)
-      function getJwtPayload(){
-        const match = document.cookie.match(/customer_jwt=([^;]+)/);
-        if (!match) return null;
-        try { const payload = atob(match[1].split('.')[1]); return JSON.parse(payload); } catch(e){ return null; }
-      }
-      const payload = getJwtPayload();
-      if (payload && payload.role !== 'admin' && adminLink) adminLink.style.display = 'none';
-      updateHeaderCartLabel();
-      const navLabels = ['☰', 'Cosmetics', 'Pooja Items', 'Product', 'Instant Breakfast Items', 'Time Saving', 'Pickle, Jam & Chutney', 'Home Care'];
-      document.querySelectorAll('nav a').forEach((el, i) => { if (navLabels[i]) el.textContent = navLabels[i] === '☰' ? '☰' : t(navLabels[i]); });
-      setText('.hero-eyebrow', '100% Natural & Organic');
-      const h1 = document.querySelector('.hero h1');
-      if (h1) h1.innerHTML = currentLanguage === 'hi' ? 'ऑर्गेनिक वेलनेस के साथ <em>बेहतर महसूस करें</em>' : 'Feel better, live fully with <em>organic wellness</em>';
       if (cookies.swadeshi_admin_session) {
         sessions.delete(cookies.swadeshi_admin_session);
       }
@@ -590,6 +627,19 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/orders' && req.method === 'POST') {
       const body = await readBody(req);
       const order = normalizeOrder(body);
+      
+      const cookies = parseCookies(req.headers.cookie);
+      if (cookies.customer_jwt) {
+        try {
+          const payload = verifyCustomerToken(cookies.customer_jwt);
+          if (payload) {
+            order.userId = payload.customerId || payload.id;
+          }
+        } catch (e) {
+          // ignore invalid token for order creation (guest checkout allowed)
+        }
+      }
+      
       const saved = await insertOrder(order);
       return sendJson(res, 201, { ok: true, order: publicOrder(saved) });
     }
