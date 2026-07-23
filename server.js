@@ -1,5 +1,5 @@
 const http = require('http');
-const helmet = require('helmet'); // security headers
+
 const fs = require('fs/promises'); // still needed: serveStatic() reads html/css/images from disk
 const path = require('path');
 const { URL } = require('url');
@@ -16,18 +16,33 @@ const adminUsername = process.env.ADMIN_USERNAME || 'admin';
 const adminPassword = process.env.ADMIN_PASSWORD || 'Swadeshi@2026';
 const sessions = new Map();
 
+// Rate Limiting globals
+const rateLimits = new Map();
+const WINDOW_MS = 15 * 60 * 1000;
+const MAX_AUTH_REQS = 5;
+const MAX_ORDER_REQS = 10;
 
-// ---------------------------------------------------------------------------
-// Security headers (Helmet) – adds CSP, HSTS, etc.
-app.use((req, res, next) => {
-  // Basic security headers
+function applySecurityHeaders(res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  // Content Security Policy – only allow scripts/styles from self and trusted CDNs
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com");
-  next();
-});
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  // Use a safer CSP that works with Razorpay and Google Auth if needed
+  res.setHeader('Content-Security-Policy', "default-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://accounts.google.com; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://via.placeholder.com https://*.googleusercontent.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://api.razorpay.com; connect-src 'self' https://api.razorpay.com https://oauth2.googleapis.com");
+}
+
+function checkRateLimit(req, type, limit, windowMs) {
+  const ip = req.socket.remoteAddress || 'unknown';
+  const key = `${type}:${ip}`;
+  const now = Date.now();
+  let record = rateLimits.get(key);
+  if (!record || now > record.resetTime) {
+    record = { count: 0, resetTime: now + windowMs };
+  }
+  record.count++;
+  rateLimits.set(key, record);
+  return record.count <= limit;
+}
 // ---------------------------------------------------------------------------
 // small helpers
 // ---------------------------------------------------------------------------
@@ -77,12 +92,12 @@ function requireAdmin(req, res) {
 function setSessionCookie(res, token) {
   res.setHeader(
     'Set-Cookie',
-    `swadeshi_admin_session=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=None`
+    `swadeshi_admin_session=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict`
   );
 }
 
 function clearSessionCookie(res) {
-  res.setHeader('Set-Cookie', 'swadeshi_admin_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+  res.setHeader('Set-Cookie', 'swadeshi_admin_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0');
 }
 
 // Customer cookie helpers
@@ -127,9 +142,25 @@ function requireCustomer(req, res) {
 
 async function readBody(req) {
   const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > 1024 * 1024) { // 1MB limit
+      const err = new Error('Payload Too Large');
+      err.status = 413;
+      throw err;
+    }
+    chunks.push(chunk);
+  }
   const raw = Buffer.concat(chunks).toString('utf8');
-  return raw ? JSON.parse(raw) : {};
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    const err = new Error('Invalid JSON');
+    err.status = 400;
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -420,6 +451,13 @@ async function serveStatic(req, res, pathname) {
     sendText(res, 403, 'Forbidden');
     return;
   }
+  
+  // Hard blocklist for sensitive files/folders
+  const blockList = ['.env', 'package.json', 'package-lock.json', 'server.js', 'auth.js', 'db.js', 'razorpay.js', 'migrate-schema.js', '.git'];
+  if (blockList.some(block => filePath.includes(block))) {
+    sendText(res, 403, 'Forbidden');
+    return;
+  }
 
   try {
     let stat = await fs.stat(filePath);
@@ -456,15 +494,32 @@ const server = http.createServer(async (req, res) => {
   }
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  
+  applySecurityHeaders(res);
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     return res.end();
   }
 
-  try {
+  // CSRF Mitigation via Origin/Referer checking for state-changing requests
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && pathname.startsWith('/api/')) {
+    const reqOrigin = req.headers.origin || req.headers.referer;
+    if (reqOrigin) {
+      const originUrl = new URL(reqOrigin);
+      if (!allowedOrigins.includes(originUrl.origin) && originUrl.origin !== `http://${req.headers.host}`) {
+        sendJson(res, 403, { error: 'Forbidden cross-origin request' });
+        return;
+      }
+    }
+  }
+
+    try {
     // ---- auth ----
     if (pathname === '/api/auth/google' && req.method === 'GET') {
+      if (!checkRateLimit(req, 'auth', MAX_AUTH_REQS, WINDOW_MS)) {
+        return sendJson(res, 429, { error: 'Too many requests' });
+      }
       const clientId = process.env.GOOGLE_CLIENT_ID;
       const redirectUri = `http://${req.headers.host}/api/auth/google/callback`;
       const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile`;
@@ -525,6 +580,9 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { orders: rows.map(rowToOrder) });
     }
     if (pathname === '/api/login' && req.method === 'POST') {
+      if (!checkRateLimit(req, 'auth', MAX_AUTH_REQS, WINDOW_MS)) {
+        return sendJson(res, 429, { error: 'Too many requests' });
+      }
       const body = await readBody(req);
       if (String(body.username || '') === adminUsername && String(body.password || '') === adminPassword) {
         const token = createSession(adminUsername);
@@ -561,14 +619,12 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, products);
     }
     if (pathname === "/api/payment/create-order" && req.method === "POST") {
-      console.log("STEP 1");
-
+      if (!checkRateLimit(req, 'order', MAX_ORDER_REQS, WINDOW_MS)) {
+        return sendJson(res, 429, { error: 'Too many requests' });
+      }
       try {
         const body = await readBody(req);
-        console.log("STEP 2", body);
-
         const amount = Number(body.amount);
-        console.log("STEP 3", amount);
 
         const order = await razorpay.orders.create({
           amount: Math.round(amount * 100),
@@ -576,16 +632,11 @@ const server = http.createServer(async (req, res) => {
           receipt: "order_" + Date.now()
         });
 
-        console.log("STEP 4", order);
-
         return sendJson(res, 200, order);
 
       } catch (err) {
         console.error("RAZORPAY ERROR:", err);
-
-        return sendJson(res, 500, {
-          error: err.message
-        });
+        return sendJson(res, 500, { error: 'Payment processing error' });
       }
     }
     if (pathname === '/api/products/bulk' && req.method === 'PUT') {
@@ -625,6 +676,9 @@ const server = http.createServer(async (req, res) => {
 
     // ---- orders ----
     if (pathname === '/api/orders' && req.method === 'POST') {
+      if (!checkRateLimit(req, 'order', MAX_ORDER_REQS, WINDOW_MS)) {
+        return sendJson(res, 429, { error: 'Too many requests' });
+      }
       const body = await readBody(req);
       const order = normalizeOrder(body);
       
@@ -700,6 +754,9 @@ const server = http.createServer(async (req, res) => {
     // ------------------- Customer Auth API -------------------
     // Register new customer
     if (pathname === '/api/register' && req.method === 'POST') {
+      if (!checkRateLimit(req, 'auth', MAX_AUTH_REQS, WINDOW_MS)) {
+        return sendJson(res, 429, { error: 'Too many requests' });
+      }
       const body = await readBody(req);
       const { email, phone, password, name } = body;
       if (!password || !(email || phone)) {
@@ -724,6 +781,9 @@ const server = http.createServer(async (req, res) => {
 
     // Login - step 1: verify credentials and send OTP
     if (pathname === '/api/login' && req.method === 'POST') {
+      if (!checkRateLimit(req, 'auth', MAX_AUTH_REQS, WINDOW_MS)) {
+        return sendJson(res, 429, { error: 'Too many requests' });
+      }
       const body = await readBody(req);
       const { identifier, password } = body; // identifier = email or phone
       if (!identifier || !password) {
@@ -743,12 +803,14 @@ const server = http.createServer(async (req, res) => {
       await pool.query(`INSERT INTO otps (phone, code, expires_at) VALUES ($1,$2,$3) ON CONFLICT (phone) DO UPDATE SET code=$2, expires_at=$3`,
         [user.phone, otp, expiresAt]
       );
-      console.log('OTP for', user.phone, otp); // placeholder for SMS
       return sendJson(res, 200, { ok: true, needOtp: true, userId: user.id });
     }
 
     // Verify OTP - step 2
     if (pathname === '/api/verify-otp' && req.method === 'POST') {
+      if (!checkRateLimit(req, 'auth', MAX_AUTH_REQS, WINDOW_MS)) {
+        return sendJson(res, 429, { error: 'Too many requests' });
+      }
       const body = await readBody(req);
       const { userId, otp } = body;
       if (!userId || !otp) return sendJson(res, 400, { error: 'userId and otp required' });
@@ -781,8 +843,11 @@ const server = http.createServer(async (req, res) => {
 
     return serveStatic(req, res, pathname);
   } catch (error) {
-    console.error(error);
-    return sendJson(res, 500, { error: error.message || 'Server error' });
+    if (error.status) {
+      return sendJson(res, error.status, { error: error.message });
+    }
+    console.error('Unhandled Server Error:', error.stack || error);
+    return sendJson(res, 500, { error: 'Internal Server Error' });
   }
 });
 
