@@ -36,8 +36,14 @@ const CUSTOMER_HOSTS = new Set(
   _customerHostsRaw.split(',').map(h => h.trim().toLowerCase()).filter(Boolean)
 );
 
+const _apiHostsRaw = (process.env.API_HOST || 'api.yourdomain.com,api.swadeshinatural.com').trim();
+const API_HOSTS = new Set(
+  _apiHostsRaw.split(',').map(h => h.trim().toLowerCase()).filter(Boolean)
+);
+
 console.log(`[Portal Security] Owner hosts allowlist: ${[...OWNER_HOSTS].join(', ')}`);
 console.log(`[Portal Security] Customer hosts allowlist: ${[...CUSTOMER_HOSTS].join(', ')}`);
+console.log(`[Portal Security] API hosts allowlist: ${[...API_HOSTS].join(', ')}`);
 
 /**
  * Extract, trim, lowercase, and remove port numbers from the Host header.
@@ -63,11 +69,11 @@ function isCustomerPortal(req) {
 }
 
 /**
- * Returns true if the request Host exists in either the Owner or Customer allowlist.
+ * Returns true if the request Host exists in either the Owner, Customer, or API allowlist.
  */
 function isKnownHost(req) {
   const host = getRequestHost(req);
-  return OWNER_HOSTS.has(host) || CUSTOMER_HOSTS.has(host);
+  return OWNER_HOSTS.has(host) || CUSTOMER_HOSTS.has(host) || API_HOSTS.has(host);
 }
 
 /**
