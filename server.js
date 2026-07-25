@@ -705,7 +705,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (pathname === '/api/login' && req.method === 'POST') {
       const body = await readBody(req);
-      // If payload contains username, this is an Admin login attempt
+      // Admin login attempt when username provided
       if (body && body.username !== undefined) {
         if (!isOwnerPortal(req)) return sendJson(res, 404, { error: 'Not found' });
         if (!checkRateLimit(req, 'auth', MAX_AUTH_REQS, WINDOW_MS)) {
@@ -718,7 +718,26 @@ const server = http.createServer(async (req, res) => {
         }
         return sendJson(res, 401, { error: 'Invalid username or password' });
       }
-      // If payload contains identifier, let request flow through to customer login below...
+      // Customer login - identifier (email or phone) and password
+      const { identifier, password } = body;
+      if (!identifier || !password) {
+        return sendJson(res, 400, { error: 'Identifier and password required' });
+      }
+      const result = await pool.query(
+        `SELECT * FROM customers WHERE email = $1 OR phone = $1`,
+        [identifier]
+      );
+      const user = result.rows[0];
+      if (!user) return sendJson(res, 401, { error: 'Invalid credentials' });
+      const pwdOk = await verifyPassword(password, user.password_hash);
+      if (!pwdOk) return sendJson(res, 401, { error: 'Invalid credentials' });
+      // generate OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      await pool.query(`INSERT INTO otps (phone, code, expires_at) VALUES ($1,$2,$3) ON CONFLICT (phone) DO UPDATE SET code=$2, expires_at=$3`,
+        [user.phone, otp, expiresAt]
+      );
+      return sendJson(res, 200, { ok: true, needOtp: true, userId: user.id });
     }
 
     if (pathname === '/api/logout' && req.method === 'POST') {
@@ -920,37 +939,12 @@ const server = http.createServer(async (req, res) => {
         [email || null, phone || null, passwordHash, name || null]
       );
       const newUser = rows[0];
-      const token = createCustomerToken({ customerId: newUser.id });
+      const token = createCustomerToken(newUser.id);
       setCustomerCookie(res, token);
       return sendJson(res, 201, { ok: true, user: newUser });
     }
 
-    // Login - step 1: verify credentials and send OTP
-    if (pathname === '/api/login' && req.method === 'POST') {
-      if (!checkRateLimit(req, 'auth', MAX_AUTH_REQS, WINDOW_MS)) {
-        return sendJson(res, 429, { error: 'Too many requests' });
-      }
-      const body = await readBody(req);
-      const { identifier, password } = body; // identifier = email or phone
-      if (!identifier || !password) {
-        return sendJson(res, 400, { error: 'Identifier and password required' });
-      }
-      const result = await pool.query(
-        `SELECT * FROM customers WHERE email = $1 OR phone = $1`,
-        [identifier]
-      );
-      const user = result.rows[0];
-      if (!user) return sendJson(res, 401, { error: 'Invalid credentials' });
-      const pwdOk = await verifyPassword(password, user.password_hash);
-      if (!pwdOk) return sendJson(res, 401, { error: 'Invalid credentials' });
-      // generate OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-      await pool.query(`INSERT INTO otps (phone, code, expires_at) VALUES ($1,$2,$3) ON CONFLICT (phone) DO UPDATE SET code=$2, expires_at=$3`,
-        [user.phone, otp, expiresAt]
-      );
-      return sendJson(res, 200, { ok: true, needOtp: true, userId: user.id });
-    }
+    // (Removed duplicate login handling – merged into earlier block)
 
     // Verify OTP - step 2
     if (pathname === '/api/verify-otp' && req.method === 'POST') {
@@ -966,7 +960,7 @@ const server = http.createServer(async (req, res) => {
       if (otpRes.rowCount === 0) return sendJson(res, 400, { error: 'Invalid or expired OTP' });
       // OTP valid, delete it
       await pool.query(`DELETE FROM otps WHERE phone = (SELECT phone FROM customers WHERE id = $1)`, [userId]);
-      const token = createCustomerToken({ customerId: userId });
+      const token = createCustomerToken(userId);
       setCustomerCookie(res, token);
       return sendJson(res, 200, { ok: true });
     }
