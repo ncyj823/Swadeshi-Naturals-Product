@@ -223,189 +223,192 @@ async function serveStatic(req, res, pathname) {
   } catch {
     sendText(res, 404, 'Not found');
   }
-}
-
-const server = http.createServer(async (req, res) => {
-  const requestUrl = new URL(req.url, `http://${req.headers.host}`);
-  const pathname = requestUrl.pathname;
-  const allowedOrigins = [
-    "https://www.swadeshinatural.com",
-    "https://swadeshinatural.com"
-  ];
-
-  const origin = req.headers.origin;
-
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  }
-
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-  );
-
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    return res.end();
-  }
 
 
+  const server = http.createServer(async (req, res) => {
+    const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+    const pathname = requestUrl.pathname;
+    const allowedOrigins = [
+      'https://www.swadeshinatural.com',
+      'https://swadeshinatural.com',
+      'http://localhost:3000',
+      'http://52.66.127.77:3000',
+      'http://52.66.127.77',
+    ];
 
-  try {
-    if (pathname === '/api/login' && req.method === 'POST') {
-      const body = await readBody(req);
-      if (String(body.username || '') === adminUsername && String(body.password || '') === adminPassword) {
-        const token = createSession(adminUsername);
-        setSessionCookie(res, token);
-        return sendJson(res, 200, { ok: true, user: { username: adminUsername } });
+    const origin = req.headers.origin;
+
+    if (allowedOrigins.includes(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    }
+
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    );
+
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      return res.end();
+    }
+
+
+
+    try {
+      if (pathname === '/api/login' && req.method === 'POST') {
+        const body = await readBody(req);
+        if (String(body.username || '') === adminUsername && String(body.password || '') === adminPassword) {
+          const token = createSession(adminUsername);
+          setSessionCookie(res, token);
+          return sendJson(res, 200, { ok: true, user: { username: adminUsername } });
+        }
+        return sendJson(res, 401, { error: 'Invalid username or password' });
       }
-      return sendJson(res, 401, { error: 'Invalid username or password' });
-    }
 
-    if (pathname === '/api/logout' && req.method === 'POST') {
-      const cookies = parseCookies(req.headers.cookie);
-      if (cookies.swadeshi_admin_session) {
-        sessions.delete(cookies.swadeshi_admin_session);
+      if (pathname === '/api/logout' && req.method === 'POST') {
+        const cookies = parseCookies(req.headers.cookie);
+        if (cookies.swadeshi_admin_session) {
+          sessions.delete(cookies.swadeshi_admin_session);
+        }
+        clearSessionCookie(res);
+        return sendJson(res, 200, { ok: true });
       }
-      clearSessionCookie(res);
-      return sendJson(res, 200, { ok: true });
-    }
 
-    if (pathname === '/api/bootstrap' && req.method === 'GET') {
-      if (!requireAdmin(req, res)) return;
-      const db = await readDb();
-      return sendJson(res, 200, db);
-    }
-
-    if (pathname === '/api/products' && req.method === 'GET') {
-      const db = await readDb();
-      return sendJson(res, 200, db.products || []);
-    }
-
-    if (pathname === '/api/products/bulk' && req.method === 'PUT') {
-      if (!requireAdmin(req, res)) return;
-      const body = await readBody(req);
-      if (!Array.isArray(body.products)) {
-        return sendJson(res, 400, { error: 'products array is required' });
+      if (pathname === '/api/bootstrap' && req.method === 'GET') {
+        if (!requireAdmin(req, res)) return;
+        const db = await readDb();
+        return sendJson(res, 200, db);
       }
-      const db = await readDb();
-      db.products = body.products.map(normalizeProduct);
-      await writeDb(db);
-      return sendJson(res, 200, { ok: true, products: db.products });
-    }
 
-    if (pathname === '/api/products' && req.method === 'POST') {
-      if (!requireAdmin(req, res)) return;
-      const body = await readBody(req);
-      const db = await readDb();
-      const normalized = updateProductList(db.products || [], body);
-      db.products = db.products || [];
-      const existingIndex = db.products.findIndex((product) => product.id === normalized.id);
-      if (existingIndex >= 0) db.products[existingIndex] = normalized;
-      else db.products.unshift(normalized);
-      await writeDb(db);
-      return sendJson(res, 200, { ok: true, product: normalized });
-    }
-
-    if (pathname.startsWith('/api/products/') && req.method === 'PUT') {
-      if (!requireAdmin(req, res)) return;
-      const id = decodeURIComponent(pathname.split('/').pop());
-      const body = await readBody(req);
-      const db = await readDb();
-      const product = normalizeProduct({ ...body, id });
-      db.products = db.products || [];
-      const index = db.products.findIndex((item) => item.id === id);
-      if (index === -1) {
-        db.products.unshift(product);
-      } else {
-        db.products[index] = product;
+      if (pathname === '/api/products' && req.method === 'GET') {
+        const db = await readDb();
+        return sendJson(res, 200, db.products || []);
       }
-      await writeDb(db);
-      return sendJson(res, 200, { ok: true, product });
-    }
 
-    if (pathname.startsWith('/api/products/') && req.method === 'DELETE') {
-      if (!requireAdmin(req, res)) return;
-      const id = decodeURIComponent(pathname.split('/').pop());
-      const db = await readDb();
-      db.products = (db.products || []).filter((product) => product.id !== id);
-      await writeDb(db);
-      return sendJson(res, 200, { ok: true });
-    }
+      if (pathname === '/api/products/bulk' && req.method === 'PUT') {
+        if (!requireAdmin(req, res)) return;
+        const body = await readBody(req);
+        if (!Array.isArray(body.products)) {
+          return sendJson(res, 400, { error: 'products array is required' });
+        }
+        const db = await readDb();
+        db.products = body.products.map(normalizeProduct);
+        await writeDb(db);
+        return sendJson(res, 200, { ok: true, products: db.products });
+      }
 
-    if (pathname === '/api/orders' && req.method === 'POST') {
-      const body = await readBody(req);
-      const db = await readDb();
-      db.orders = db.orders || [];
-      const order = normalizeOrder(body);
-      db.orders.unshift(order);
-      await writeDb(db);
-      return sendJson(res, 201, { ok: true, order: publicOrder(order) });
-    }
+      if (pathname === '/api/products' && req.method === 'POST') {
+        if (!requireAdmin(req, res)) return;
+        const body = await readBody(req);
+        const db = await readDb();
+        const normalized = updateProductList(db.products || [], body);
+        db.products = db.products || [];
+        const existingIndex = db.products.findIndex((product) => product.id === normalized.id);
+        if (existingIndex >= 0) db.products[existingIndex] = normalized;
+        else db.products.unshift(normalized);
+        await writeDb(db);
+        return sendJson(res, 200, { ok: true, product: normalized });
+      }
 
-    if (pathname === '/api/orders/track' && req.method === 'GET') {
-      const query = String(requestUrl.searchParams.get('q') || '').trim().toLowerCase();
-      if (!query) return sendJson(res, 400, { error: 'Order ID or phone number is required' });
-      const digits = query.replace(/\D/g, '');
-      const db = await readDb();
-      const matches = (db.orders || []).filter((order) => {
-        const normalizedId = String(order.id || '').toLowerCase();
-        const idMatch = normalizedId === query || normalizedId.includes(query.replace(/^#/, ''));
-        const phoneDigits = String(order.customerPhone || order.phone || '').replace(/\D/g, '');
-        const phoneMatch = digits.length >= 4 && phoneDigits.endsWith(digits);
-        return idMatch || phoneMatch;
-      }).map(publicOrder);
-      return sendJson(res, 200, { ok: true, orders: matches });
-    }
+      if (pathname.startsWith('/api/products/') && req.method === 'PUT') {
+        if (!requireAdmin(req, res)) return;
+        const id = decodeURIComponent(pathname.split('/').pop());
+        const body = await readBody(req);
+        const db = await readDb();
+        const product = normalizeProduct({ ...body, id });
+        db.products = db.products || [];
+        const index = db.products.findIndex((item) => item.id === id);
+        if (index === -1) {
+          db.products.unshift(product);
+        } else {
+          db.products[index] = product;
+        }
+        await writeDb(db);
+        return sendJson(res, 200, { ok: true, product });
+      }
 
-    if (pathname === '/api/orders' && req.method === 'GET') {
-      if (!requireAdmin(req, res)) return;
-      const db = await readDb();
-      return sendJson(res, 200, db.orders || []);
-    }
+      if (pathname.startsWith('/api/products/') && req.method === 'DELETE') {
+        if (!requireAdmin(req, res)) return;
+        const id = decodeURIComponent(pathname.split('/').pop());
+        const db = await readDb();
+        db.products = (db.products || []).filter((product) => product.id !== id);
+        await writeDb(db);
+        return sendJson(res, 200, { ok: true });
+      }
 
-    if (pathname.startsWith('/api/orders/') && req.method === 'PATCH') {
-      if (!requireAdmin(req, res)) return;
-      const id = decodeURIComponent(pathname.split('/').pop());
-      const body = await readBody(req);
-      const db = await readDb();
-      db.orders = (db.orders || []).map((order) => order.id === id ? normalizeOrder({ ...order, ...body, id }) : order);
-      await writeDb(db);
-      const updated = db.orders.find((order) => order.id === id) || null;
-      return sendJson(res, 200, { ok: true, order: updated });
-    }
+      if (pathname === '/api/orders' && req.method === 'POST') {
+        const body = await readBody(req);
+        const db = await readDb();
+        db.orders = db.orders || [];
+        const order = normalizeOrder(body);
+        db.orders.unshift(order);
+        await writeDb(db);
+        return sendJson(res, 201, { ok: true, order: publicOrder(order) });
+      }
 
-    if (pathname === '/api/customers' && req.method === 'GET') {
-      if (!requireAdmin(req, res)) return;
-      const db = await readDb();
-      return sendJson(res, 200, db.customers || []);
-    }
+      if (pathname === '/api/orders/track' && req.method === 'GET') {
+        const query = String(requestUrl.searchParams.get('q') || '').trim().toLowerCase();
+        if (!query) return sendJson(res, 400, { error: 'Order ID or phone number is required' });
+        const digits = query.replace(/\D/g, '');
+        const db = await readDb();
+        const matches = (db.orders || []).filter((order) => {
+          const normalizedId = String(order.id || '').toLowerCase();
+          const idMatch = normalizedId === query || normalizedId.includes(query.replace(/^#/, ''));
+          const phoneDigits = String(order.customerPhone || order.phone || '').replace(/\D/g, '');
+          const phoneMatch = digits.length >= 4 && phoneDigits.endsWith(digits);
+          return idMatch || phoneMatch;
+        }).map(publicOrder);
+        return sendJson(res, 200, { ok: true, orders: matches });
+      }
 
-    if (pathname === '/admin' || pathname === '/admin.html') {
-      if (!requireAdmin(req, res)) return;
-      return serveStatic(req, res, '/admin.html');
-    }
+      if (pathname === '/api/orders' && req.method === 'GET') {
+        if (!requireAdmin(req, res)) return;
+        const db = await readDb();
+        return sendJson(res, 200, db.orders || []);
+      }
 
-    if (pathname === '/login' || pathname === '/login.html') {
-      return serveStatic(req, res, '/login.html');
-    }
+      if (pathname.startsWith('/api/orders/') && req.method === 'PATCH') {
+        if (!requireAdmin(req, res)) return;
+        const id = decodeURIComponent(pathname.split('/').pop());
+        const body = await readBody(req);
+        const db = await readDb();
+        db.orders = (db.orders || []).map((order) => order.id === id ? normalizeOrder({ ...order, ...body, id }) : order);
+        await writeDb(db);
+        const updated = db.orders.find((order) => order.id === id) || null;
+        return sendJson(res, 200, { ok: true, order: updated });
+      }
 
-    if (pathname === '/' || pathname === '/index.html' || pathname.startsWith('/images/')) {
+      if (pathname === '/api/customers' && req.method === 'GET') {
+        if (!requireAdmin(req, res)) return;
+        const db = await readDb();
+        return sendJson(res, 200, db.customers || []);
+      }
+
+      if (pathname === '/admin' || pathname === '/admin.html') {
+        if (!requireAdmin(req, res)) return;
+        return serveStatic(req, res, '/admin.html');
+      }
+
+      if (pathname === '/login' || pathname === '/login.html') {
+        return serveStatic(req, res, '/login.html');
+      }
+
+      if (pathname === '/' || pathname === '/index.html' || pathname.startsWith('/images/')) {
+        return serveStatic(req, res, pathname);
+      }
+
       return serveStatic(req, res, pathname);
+    } catch (error) {
+      return sendJson(res, 500, { error: error.message || 'Server error' });
     }
+  });
 
-    return serveStatic(req, res, pathname);
-  } catch (error) {
-    return sendJson(res, 500, { error: error.message || 'Server error' });
-  }
-});
-
-server.listen(port, () => {
-  console.log(`Swadeshi server running at http://localhost:${port}`);
-});
+  server.listen(port, () => {
+    console.log(`Swadeshi server running at http://localhost:${port}`);
+  });
