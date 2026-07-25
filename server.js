@@ -626,20 +626,23 @@ const server = http.createServer(async (req, res) => {
   }
 
     try {
-    // ---- /app-config.js — served dynamically; mode is derived per-request from Host header ----
+    // ---- /app-config.js — served dynamically; mode & apiBase derived per-request ----
     if (pathname === '/app-config.js') {
-      // Determine mode for THIS specific request — not a global constant.
-      // A single server instance can serve 'customer' to yourdomain.com
-      // and 'owner' to owner.yourdomain.com simultaneously.
       const mode = isOwnerPortal(req) ? 'owner' : 'customer';
+      const host = getRequestHost(req);
+      const isLocal = host === 'localhost' || host === '127.0.0.1';
+      const defaultApiBase = isLocal ? `http://${req.headers.host}` : 'https://api.swadeshinatural.com';
+      const apiBase = process.env.API_BASE_URL || defaultApiBase;
       const configJs = [
         '/* Swadeshi Natural Products — App Config (server-generated, do not edit) */',
         '(function (root) {',
         '  \'use strict\';',
         '  var MODE = \'' + mode + '\';',
+        '  var API_BASE = \'' + apiBase + '\';',
         '  var MODES = Object.freeze({ CUSTOMER: \'customer\', OWNER: \'owner\' });',
         '  root.APP_CONFIG = Object.freeze({',
         '    mode: MODE,',
+        '    apiBase: API_BASE,',
         '    MODES: MODES,',
         '    isCustomer: function () { return MODE === MODES.CUSTOMER; },',
         '    isOwner:    function () { return MODE === MODES.OWNER; },',
@@ -648,7 +651,7 @@ const server = http.createServer(async (req, res) => {
         '      console.warn(\"[APP_CONFIG] Mode is host-controlled. Access the owner domain to use the admin portal.\");',
         '    }',
         '  });',
-        '  console.info(\"[APP_CONFIG] Portal mode \\u2192 \\\"\" + MODE + \"\\\" (host: \" + location.hostname + \")\");',
+        '  console.info(\"[APP_CONFIG] Portal mode \\u2192 \\\"\" + MODE + \"\\\" (apiBase: \" + API_BASE + \")\");',
         '}(typeof window !== \'undefined\' ? window : this));'
       ].join('\n');
       res.writeHead(200, {

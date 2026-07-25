@@ -2044,7 +2044,7 @@
       </div>
       <div class="header-icons">
         <div id="auth-link-container">
-          <a href="/api/auth/google">
+          <a href="#" id="google-login-link" onclick="triggerGoogleLogin(event)">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8" width="20" height="20">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -2581,9 +2581,18 @@
   <script src="/app-config.js"></script>
 
   <script>
-    const API_BASE = "https://api.swadeshinatural.com";
+    const API_BASE = (window.APP_CONFIG && window.APP_CONFIG.apiBase) ||
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? window.location.origin
+        : 'https://api.swadeshinatural.com');
     const CART_STORAGE_KEY = 'swadeshi_cart';
     const PRODUCTS_STORAGE_KEY = 'swadeshi_products';
+
+    function triggerGoogleLogin(e) {
+      if (e) e.preventDefault();
+      const apiBase = (window.APP_CONFIG && window.APP_CONFIG.apiBase) || (typeof API_BASE !== 'undefined' ? API_BASE : '');
+      window.location.href = `${apiBase}/api/auth/google`;
+    }
 
     // ── APP_MODE: Customer storefront ─────────────────────────────
     // APP_CONFIG is loaded before this script via /app-config.js.

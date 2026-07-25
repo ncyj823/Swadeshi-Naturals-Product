@@ -59,11 +59,14 @@
   if (root.APP_CONFIG) return; // server already set this — nothing to do
 
   var MODE = 'customer'; // safe default
+  var isLocal = typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+  var API_BASE = isLocal ? location.origin : 'https://api.swadeshinatural.com';
 
   var MODES = Object.freeze({ CUSTOMER: 'customer', OWNER: 'owner' });
 
   root.APP_CONFIG = Object.freeze({
     mode: MODE,
+    apiBase: API_BASE,
     MODES: MODES,
     isCustomer: function () { return MODE === MODES.CUSTOMER; },
     isOwner:    function () { return MODE === MODES.OWNER; },
