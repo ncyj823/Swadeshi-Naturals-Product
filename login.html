@@ -437,29 +437,284 @@
   <script src="/app-config.js"></script>
 
   <script>
-    const form = document.getElementById('login-form');
-    const statusEl = document.getElementById('login-status');
-    document.getElementById('back-home-btn').addEventListener('click', function () {
-      window.location.href = '/';
-    });
-    form.addEventListener('submit', async function (event) {
-      event.preventDefault();
-      statusEl.textContent = 'Signing in...';
-      const payload = { username: form.username.value.trim(), password: form.password.value };
-      try {
-        const response = await fetch('https://api.swadeshinatural.com/api/login', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Login failed');
-        window.location.href = '/admin.html';
-      } catch (error) {
-        statusEl.textContent = error.message || 'Login failed';
+    function triggerGoogleLogin(e) {
+      if (e) e.preventDefault();
+      const apiBase = (window.APP_CONFIG && window.APP_CONFIG.apiBase) || '';
+      window.location.href = `${apiBase}/api/auth/google`;
+    }
+
+    if (window.APP_CONFIG && window.APP_CONFIG.isCustomer && window.APP_CONFIG.isCustomer()) {
+      // 1. Update titles & text for customer portal
+      document.title = "Swadeshi Natural Products - Customer Login";
+      document.querySelectorAll('.brand-sub').forEach(el => el.textContent = "Customer Portal");
+      document.querySelectorAll('.footer').forEach(el => el.textContent = "Swadeshi Natural Products Customer Portal");
+
+      // 2. Update Hero banner content
+      const heroCopy = document.querySelector('.hero-copy');
+      if (heroCopy) {
+        heroCopy.innerHTML = `
+          <h1>Pure. Natural. Organic.</h1>
+          <p>Authenticate to access our exclusive collection of organic grains, hand-pounded pulses, and premium cold-pressed wellness oils.</p>
+          <div class="hero-card">
+            <div class="mini-title">Secure Shopping Experience</div>
+            <div class="mini-row"><span class="mini-dot"></span>
+              <div class="mini-text">Enjoy safe checkouts, order tracking, and customized health suggestions.</div>
+            </div>
+            <div class="mini-row"><span class="mini-dot"></span>
+              <div class="mini-text">All orders are hand-picked and dispatched from our local Hyderabad warehouse.</div>
+            </div>
+          </div>
+          <div class="hero-bullets">
+            <div class="bullet"><span class="bullet-dot"></span>Instant verification via Google OAuth</div>
+            <div class="bullet"><span class="bullet-dot"></span>OTP-secured email & phone authentication</div>
+            <div class="bullet"><span class="bullet-dot"></span>100% transparent and trace-certified sourcing</div>
+          </div>
+        `;
       }
-    });
+
+      // 3. Render Customer Auth (Sign In, Sign Up, Google, OTP) in the Panel
+      const panel = document.querySelector('.panel');
+      if (panel) {
+        panel.innerHTML = `
+          <div class="auth-tabs" style="display:flex; gap:16px; margin-bottom:24px; border-bottom:1px solid var(--line); padding-bottom:8px;">
+            <button id="tab-signin" class="auth-tab-btn active" style="background:none; border:none; font-size:16px; font-weight:600; cursor:pointer; color:var(--pine); border-bottom:2px solid var(--olive); padding-bottom:8px; outline:none;">Sign In</button>
+            <button id="tab-signup" class="auth-tab-btn" style="background:none; border:none; font-size:16px; font-weight:600; cursor:pointer; color:var(--ink-faint); padding-bottom:8px; outline:none;">Register</button>
+          </div>
+
+          <div id="google-auth-section" style="margin-bottom:24px;">
+            <button class="primary" id="google-login-btn" style="background:#fff; color:#444; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; gap:10px; width:100%; height:46px; border-radius:10px; font-weight:600; cursor:pointer; font-size:14px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+              <svg width="18" height="18" viewBox="0 0 24 24">
+                <path fill="#ea4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.51 14.99 1 12 1 7.24 1 3.2 3.73 1.25 7.72l3.85 2.99C6.01 7.23 8.78 5.04 12 5.04z"/>
+                <path fill="#4285f4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.27H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.58l3.73 2.89c2.18-2.01 3.7-4.98 3.7-8.71z"/>
+                <path fill="#fbbc05" d="M5.1 14.73c-.24-.72-.38-1.49-.38-2.27s.14-1.55.38-2.27L1.25 7.2C.46 8.81 0 10.6 0 12.5s.46 3.69 1.25 5.3l3.85-3.07z"/>
+                <path fill="#34a853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.73-2.89c-1.03.69-2.35 1.11-4.23 1.11-3.22 0-6-2.19-6.9-5.18L1.25 16.2C3.2 20.27 7.24 23 12 23z"/>
+              </svg>
+              Continue with Google
+            </button>
+            <div style="display:flex; align-items:center; margin:20px 0; color:var(--ink-faint); font-size:12px;">
+              <div style="flex:1; height:1px; background:var(--line);"></div>
+              <span style="padding:0 10px;">or authenticate using credentials</span>
+              <div style="flex:1; height:1px; background:var(--line);"></div>
+            </div>
+          </div>
+
+          <form id="customer-signin-form">
+            <div class="field">
+              <label for="signin-identifier">Email or Mobile Number</label>
+              <input id="signin-identifier" required placeholder="name@example.com or 9876543210">
+            </div>
+            <div class="field">
+              <label for="signin-password">Password</label>
+              <input id="signin-password" type="password" required placeholder="Enter password">
+            </div>
+            <button class="primary" type="submit" style="width:100%; height:46px; border-radius:10px; margin-top:8px;">Sign In</button>
+          </form>
+
+          <form id="customer-signup-form" style="display:none;">
+            <div class="field">
+              <label for="signup-name">Full Name</label>
+              <input id="signup-name" required placeholder="Your Name">
+            </div>
+            <div class="field">
+              <label for="signup-email">Email Address</label>
+              <input id="signup-email" type="email" required placeholder="name@example.com">
+            </div>
+            <div class="field">
+              <label for="signup-phone">Mobile Number</label>
+              <input id="signup-phone" required placeholder="9876543210">
+            </div>
+            <div class="field">
+              <label for="signup-password">Password</label>
+              <input id="signup-password" type="password" required placeholder="At least 8 characters">
+              <span style="font-size:10px; color:var(--ink-faint); display:block; margin-top:4px;">Must contain uppercase, lowercase, number, and special character.</span>
+            </div>
+            <button class="primary" type="submit" style="width:100%; height:46px; border-radius:10px; margin-top:8px;">Create Account</button>
+          </form>
+
+          <div id="otp-section" style="display:none;">
+            <h3 style="margin-bottom:12px; color:var(--pine);">OTP Verification</h3>
+            <p style="font-size:13px; color:var(--ink-soft); margin-bottom:16px;">We have sent a verification code to your mobile number. Enter it below to complete sign in.</p>
+            <form id="otp-form">
+              <input type="hidden" id="otp-user-id">
+              <div class="field">
+                <label for="otp-code">Verification Code</label>
+                <input id="otp-code" required placeholder="6-digit code" pattern="\\d{6}" maxlength="6">
+              </div>
+              <button class="primary" type="submit" style="width:100%; height:46px; border-radius:10px;">Verify & Continue</button>
+            </form>
+          </div>
+
+          <div class="status" id="login-status" style="margin-top:16px;"></div>
+        `;
+
+        // Switch tabs
+        const tabSignin = document.getElementById('tab-signin');
+        const tabSignup = document.getElementById('tab-signup');
+        const signinForm = document.getElementById('customer-signin-form');
+        const signupForm = document.getElementById('customer-signup-form');
+        const googleAuthSec = document.getElementById('google-auth-section');
+        const otpSection = document.getElementById('otp-section');
+        const statusEl = document.getElementById('login-status');
+
+        tabSignin.addEventListener('click', () => {
+          tabSignin.classList.add('active');
+          tabSignin.style.color = 'var(--pine)';
+          tabSignin.style.borderBottom = '2px solid var(--olive)';
+          tabSignup.classList.remove('active');
+          tabSignup.style.color = 'var(--ink-faint)';
+          tabSignup.style.borderBottom = 'none';
+          signinForm.style.display = 'block';
+          signupForm.style.display = 'none';
+          googleAuthSec.style.display = 'block';
+          otpSection.style.display = 'none';
+          statusEl.textContent = '';
+        });
+
+        tabSignup.addEventListener('click', () => {
+          tabSignup.classList.add('active');
+          tabSignup.style.color = 'var(--pine)';
+          tabSignup.style.borderBottom = '2px solid var(--olive)';
+          tabSignin.classList.remove('active');
+          tabSignin.style.color = 'var(--ink-faint)';
+          tabSignin.style.borderBottom = 'none';
+          signinForm.style.display = 'none';
+          signupForm.style.display = 'block';
+          googleAuthSec.style.display = 'block';
+          otpSection.style.display = 'none';
+          statusEl.textContent = '';
+        });
+
+        // Continue with Google
+        document.getElementById('google-login-btn').addEventListener('click', (e) => {
+          triggerGoogleLogin(e);
+        });
+
+        // Sign In submission
+        signinForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          statusEl.textContent = 'Verifying credentials...';
+          statusEl.style.color = 'var(--ink-soft)';
+          const payload = {
+            identifier: document.getElementById('signin-identifier').value.trim(),
+            password: document.getElementById('signin-password').value
+          };
+
+          try {
+            const apiBase = window.APP_CONFIG.apiBase || '';
+            const response = await fetch(apiBase + '/api/login', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Login failed');
+
+            if (data.needOtp) {
+              document.getElementById('otp-user-id').value = data.userId;
+              signinForm.style.display = 'none';
+              googleAuthSec.style.display = 'none';
+              otpSection.style.display = 'block';
+              statusEl.textContent = 'OTP sent to registered phone.';
+              statusEl.style.color = 'var(--olive)';
+            } else {
+              window.location.href = '/';
+            }
+          } catch (error) {
+            statusEl.textContent = error.message || 'Login failed';
+            statusEl.style.color = 'red';
+          }
+        });
+
+        // Sign Up submission
+        signupForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          statusEl.textContent = 'Creating account...';
+          statusEl.style.color = 'var(--ink-soft)';
+          const payload = {
+            name: document.getElementById('signup-name').value.trim(),
+            email: document.getElementById('signup-email').value.trim(),
+            phone: document.getElementById('signup-phone').value.trim(),
+            password: document.getElementById('signup-password').value
+          };
+
+          try {
+            const apiBase = window.APP_CONFIG.apiBase || '';
+            const response = await fetch(apiBase + '/api/register', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Registration failed');
+
+            statusEl.textContent = 'Account created successfully!';
+            statusEl.style.color = 'var(--olive)';
+            setTimeout(() => { window.location.href = '/'; }, 1000);
+          } catch (error) {
+            statusEl.textContent = error.message || 'Registration failed';
+            statusEl.style.color = 'red';
+          }
+        });
+
+        // OTP verification
+        document.getElementById('otp-form').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          statusEl.textContent = 'Verifying code...';
+          statusEl.style.color = 'var(--ink-soft)';
+          const payload = {
+            userId: document.getElementById('otp-user-id').value,
+            otp: document.getElementById('otp-code').value.trim()
+          };
+
+          try {
+            const apiBase = window.APP_CONFIG.apiBase || '';
+            const response = await fetch(apiBase + '/api/verify-otp', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'OTP verification failed');
+
+            statusEl.textContent = 'Sign in successful!';
+            statusEl.style.color = 'var(--olive)';
+            setTimeout(() => { window.location.href = '/'; }, 1000);
+          } catch (error) {
+            statusEl.textContent = error.message || 'OTP verification failed';
+            statusEl.style.color = 'red';
+          }
+        });
+      }
+    } else {
+      // Fallback: Admin Login flow (Owner Portal)
+      const form = document.getElementById('login-form');
+      const statusEl = document.getElementById('login-status');
+      document.getElementById('back-home-btn').addEventListener('click', function () {
+        window.location.href = '/';
+      });
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        statusEl.textContent = 'Signing in...';
+        const payload = { username: form.username.value.trim(), password: form.password.value };
+        try {
+          const apiBase = (window.APP_CONFIG && window.APP_CONFIG.apiBase) || '';
+          const response = await fetch(apiBase + '/api/login', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || 'Login failed');
+          window.location.href = '/admin.html';
+        } catch (error) {
+          statusEl.textContent = error.message || 'Login failed';
+        }
+      });
+    }
   </script>
 </body>
 

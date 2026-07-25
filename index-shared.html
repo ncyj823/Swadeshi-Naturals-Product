@@ -5,6 +5,34 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Swadeshi Natural Products</title>
+  <!-- Global App Configuration (must load before page scripts) -->
+  <script src="/app-config.js"></script>
+  <script>
+    (function () {
+      if (window.APP_CONFIG && window.APP_CONFIG.isCustomer && window.APP_CONFIG.isCustomer()) {
+        // Prevent showing the storefront until verified
+        var css = document.createElement('style');
+        css.id = 'auth-gate-style';
+        css.innerHTML = 'html { display: none !important; }';
+        document.head.appendChild(css);
+
+        var apiBase = window.APP_CONFIG.apiBase || '';
+        fetch(apiBase + '/api/customer/profile', { credentials: 'include' })
+          .then(function (res) {
+            if (res.ok) {
+              // Authenticated: remove styling to show storefront
+              var gateStyle = document.getElementById('auth-gate-style');
+              if (gateStyle) gateStyle.remove();
+            } else {
+              window.location.href = '/login.html';
+            }
+          })
+          .catch(function () {
+            window.location.href = '/login.html';
+          });
+      }
+    })();
+  </script>
   <link
     href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap"
     rel="stylesheet">
