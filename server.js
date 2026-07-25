@@ -639,7 +639,9 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 429, { error: 'Too many requests' });
       }
       const clientId = process.env.GOOGLE_CLIENT_ID;
-      const redirectUri = `http://${req.headers.host}/api/auth/google/callback`;
+      const isLocal = requestHost === 'localhost' || requestHost === '127.0.0.1';
+      const proto = isLocal ? 'http' : 'https';
+      const redirectUri = `${proto}://${req.headers.host}/api/auth/google/callback`;
       const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile`;
       res.writeHead(302, { Location: url });
       return res.end();
@@ -647,16 +649,20 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/auth/google/callback' && req.method === 'GET') {
       const code = requestUrl.searchParams.get('code');
+      const isLocal = requestHost === 'localhost' || requestHost === '127.0.0.1';
+      const frontendUrl = isLocal ? `http://${req.headers.host}` : 'https://www.swadeshinatural.com';
       if (!code) {
-        res.writeHead(302, { Location: '/' });
+        res.writeHead(302, { Location: `${frontendUrl}/` });
         return res.end();
       }
       try {
+        const proto = isLocal ? 'http' : 'https';
+        const redirectUri = `${proto}://${req.headers.host}/api/auth/google/callback`;
         const tokens = await getGoogleTokens({
           code,
           clientId: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          redirectUri: `http://${req.headers.host}/api/auth/google/callback`
+          redirectUri
         });
         const profile = await getGoogleUser(tokens);
         
@@ -677,11 +683,11 @@ const server = http.createServer(async (req, res) => {
         
         const token = createCustomerToken(user.id);
         setCustomerCookie(res, token);
-        res.writeHead(302, { Location: '/profile.html' });
+        res.writeHead(302, { Location: `${frontendUrl}/profile.html` });
         return res.end();
       } catch (err) {
         console.error('Google OAuth Error:', err);
-        res.writeHead(302, { Location: '/' });
+        res.writeHead(302, { Location: `${frontendUrl}/` });
         return res.end();
       }
     }
