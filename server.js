@@ -1,3 +1,7 @@
+require("dotenv").config({
+  path: require("path").join(__dirname, ".env")
+});
+
 const http = require('http');
 
 const fs = require('fs/promises'); // still needed: serveStatic() reads html/css/images from disk
@@ -103,6 +107,14 @@ function buildAllowedOrigins() {
   return origins;
 }
 const ALLOWED_ORIGINS = buildAllowedOrigins();
+
+// Vercel gives every preview deployment a unique hostname. Allow previews for
+// this project so registration/login can be tested before the custom domain is
+// promoted, without opening the API to arbitrary Vercel applications.
+function isAllowedCorsOrigin(origin) {
+  return ALLOWED_ORIGINS.has(origin) ||
+    /^https:\/\/swadesi-products-[a-z0-9-]+\.vercel\.app$/i.test(origin);
+}
 
 // Rate Limiting globals
 const rateLimits = new Map();
@@ -598,7 +610,7 @@ const server = http.createServer(async (req, res) => {
 
   // TASK 3: Tighten CORS — validate origin strictly against allowlist
   const origin = req.headers.origin ? req.headers.origin.trim().toLowerCase() : null;
-  const isOriginAllowed = origin && ALLOWED_ORIGINS.has(origin);
+  const isOriginAllowed = origin && isAllowedCorsOrigin(origin);
 
   if (isOriginAllowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
@@ -623,7 +635,7 @@ const server = http.createServer(async (req, res) => {
     if (reqOrigin) {
       try {
         const originUrl = new URL(reqOrigin);
-        if (!ALLOWED_ORIGINS.has(originUrl.origin.toLowerCase())) {
+        if (!isAllowedCorsOrigin(originUrl.origin.toLowerCase())) {
           return sendJson(res, 403, { error: 'Forbidden cross-origin request' });
         }
       } catch (e) {
