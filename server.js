@@ -50,7 +50,8 @@ console.log(`[Portal Security] API hosts allowlist: ${[...API_HOSTS].join(', ')}
  * e.g. "owner.yourdomain.com:443" → "owner.yourdomain.com"
  */
 function getRequestHost(req) {
-  const hostHeader = req.headers.host || '';
+  // Prefer X-Forwarded-Host (set by proxies like AWS ALB or Nginx) when present.
+  const hostHeader = req.headers['x-forwarded-host'] || req.headers.host || '';
   return hostHeader.split(':')[0].trim().toLowerCase();
 }
 
