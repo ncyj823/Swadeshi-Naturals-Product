@@ -8,6 +8,10 @@
   ],
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "https://api.swadeshinatural.com/api/$1"
+    },
+    {
       "src": "/admin",
       "dest": "/admin.html"
     },
