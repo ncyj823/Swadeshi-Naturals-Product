@@ -555,7 +555,7 @@ async function serveStatic(req, res, pathname) {
     sendText(res, 403, 'Forbidden');
     return;
   }
-  
+
   // Hard blocklist for sensitive files/folders
   const blockList = ['.env', 'package.json', 'package-lock.json', 'server.js', 'auth.js', 'db.js', 'razorpay.js', 'migrate-schema.js', '.git'];
   if (blockList.some(block => filePath.includes(block))) {
@@ -592,7 +592,8 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 421, { error: 'Misdirected Request: Unrecognized Host header' });
   }
 
-  const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+  const host = req.headers.host || 'localhost:3000';
+  const requestUrl = new URL(req.url, `http://${host}`);
   const pathname = requestUrl.pathname;
 
   // TASK 3: Tighten CORS — validate origin strictly against allowlist
@@ -631,7 +632,7 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-    try {
+  try {
 
 
     // ---- auth ----
@@ -666,7 +667,7 @@ const server = http.createServer(async (req, res) => {
           redirectUri
         });
         const profile = await getGoogleUser(tokens);
-        
+
         let result = await pool.query(`SELECT id FROM users WHERE google_id = $1 OR email = $2`, [profile.id, profile.email]);
         let user = result.rows[0];
         if (!user) {
@@ -681,7 +682,7 @@ const server = http.createServer(async (req, res) => {
             [profile.id, profile.name, profile.picture, user.id]
           );
         }
-        
+
         const token = createCustomerToken(user.id);
         setCustomerCookie(res, token);
         res.writeHead(302, { Location: `${frontendUrl}/profile.html` });
@@ -832,7 +833,7 @@ const server = http.createServer(async (req, res) => {
       }
       const body = await readBody(req);
       const order = normalizeOrder(body);
-      
+
       const cookies = parseCookies(req.headers.cookie);
       if (cookies.customer_jwt) {
         try {
@@ -844,7 +845,7 @@ const server = http.createServer(async (req, res) => {
           // ignore invalid token for order creation (guest checkout allowed)
         }
       }
-      
+
       const saved = await insertOrder(order);
       return sendJson(res, 201, { ok: true, order: publicOrder(saved) });
     }
