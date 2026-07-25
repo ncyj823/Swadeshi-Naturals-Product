@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -1847,6 +1847,46 @@
       </div>
     </div>
   </div>
+  <!-- Global App Configuration (must load before page scripts) -->
+  <script src="/app-config.js"></script>
+
+  <!-- ── APP_MODE Guard ────────────────────────────────────────────
+       If APP_MODE === "customer", hide the entire admin shell.
+       All admin HTML remains in the DOM; only display is toggled.
+       Owner mode: full admin panel is shown as normal.
+  ──────────────────────────────────────────────────────────────── -->
+  <script>
+    (function applyAdminModeGuard() {
+      if (!window.APP_CONFIG || !APP_CONFIG.isCustomer()) return;
+
+      // Hide admin shell immediately (before paint) to avoid flicker.
+      var shell = document.querySelector('.shell');
+      if (shell) shell.style.display = 'none';
+
+      // Render a lightweight "not available in customer mode" notice.
+      var notice = document.createElement('div');
+      notice.id = 'customer-mode-notice';
+      notice.style.cssText = [
+        'min-height:100vh', 'display:flex', 'flex-direction:column',
+        'align-items:center', 'justify-content:center', 'gap:16px',
+        'font-family:Poppins,sans-serif', 'background:#faf8f2', 'color:#2b2a22'
+      ].join(';');
+      notice.innerHTML =
+        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#8a9a52" stroke-width="1.5">' +
+          '<circle cx="12" cy="12" r="10"/>' +
+          '<path stroke-linecap="round" d="M12 8v4M12 16h.01"/>' +
+        '</svg>' +
+        '<div style="text-align:center">' +
+          '<p style="font-size:18px;font-weight:600;margin-bottom:6px">Admin panel unavailable</p>' +
+          '<p style="font-size:13px;color:#94917f">APP_MODE is set to <strong>customer</strong>.<br>' +
+          'Switch to <strong>owner</strong> mode to access this panel.</p>' +
+        '</div>' +
+        '<a href="/" style="margin-top:8px;padding:10px 24px;background:#8a9a52;color:#fff;' +
+          'border-radius:7px;font-size:13px;font-weight:500;text-decoration:none">← Back to store</a>';
+      document.body.insertBefore(notice, document.body.firstChild);
+    }());
+  </script>
+
   <script>
     (function () {
 

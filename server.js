@@ -16,6 +16,87 @@ const adminUsername = process.env.ADMIN_USERNAME || 'admin';
 const adminPassword = process.env.ADMIN_PASSWORD || 'Swadeshi@2026';
 const sessions = new Map();
 
+// ---------------------------------------------------------------------------
+// Host & Portal Security Configuration
+//
+// Architecture:
+//   One EC2 backend serves TWO portals based on explicit Host allowlists:
+//     Customer Portal : yourdomain.com, www.yourdomain.com
+//     Owner Portal    : owner.yourdomain.com
+//
+// Unrecognized hosts are rejected with HTTP 421 Misdirected Request.
+// ---------------------------------------------------------------------------
+const _ownerHostsRaw = (process.env.OWNER_HOST || 'owner.yourdomain.com,localhost,127.0.0.1').trim();
+const OWNER_HOSTS = new Set(
+  _ownerHostsRaw.split(',').map(h => h.trim().toLowerCase()).filter(Boolean)
+);
+
+const _customerHostsRaw = (process.env.CUSTOMER_HOST || 'yourdomain.com,www.yourdomain.com').trim();
+const CUSTOMER_HOSTS = new Set(
+  _customerHostsRaw.split(',').map(h => h.trim().toLowerCase()).filter(Boolean)
+);
+
+console.log(`[Portal Security] Owner hosts allowlist: ${[...OWNER_HOSTS].join(', ')}`);
+console.log(`[Portal Security] Customer hosts allowlist: ${[...CUSTOMER_HOSTS].join(', ')}`);
+
+/**
+ * Extract, trim, lowercase, and remove port numbers from the Host header.
+ * e.g. "owner.yourdomain.com:443" → "owner.yourdomain.com"
+ */
+function getRequestHost(req) {
+  const hostHeader = req.headers.host || '';
+  return hostHeader.split(':')[0].trim().toLowerCase();
+}
+
+/**
+ * Returns true ONLY if the request Host matches an explicit Owner host.
+ */
+function isOwnerPortal(req) {
+  return OWNER_HOSTS.has(getRequestHost(req));
+}
+
+/**
+ * Returns true ONLY if the request Host matches an explicit Customer host.
+ */
+function isCustomerPortal(req) {
+  return CUSTOMER_HOSTS.has(getRequestHost(req));
+}
+
+/**
+ * Returns true if the request Host exists in either the Owner or Customer allowlist.
+ */
+function isKnownHost(req) {
+  const host = getRequestHost(req);
+  return OWNER_HOSTS.has(host) || CUSTOMER_HOSTS.has(host);
+}
+
+/**
+ * Build explicit CORS allowed origins list.
+ */
+function buildAllowedOrigins() {
+  const origins = new Set();
+  origins.add('https://yourdomain.com');
+  origins.add('https://www.yourdomain.com');
+  origins.add('https://owner.yourdomain.com');
+
+  if (process.env.ALLOWED_ORIGINS) {
+    process.env.ALLOWED_ORIGINS.split(',').forEach(o => {
+      if (o.trim()) origins.add(o.trim().toLowerCase());
+    });
+  }
+
+  [...OWNER_HOSTS, ...CUSTOMER_HOSTS].forEach(h => {
+    origins.add(`http://${h}`);
+    origins.add(`https://${h}`);
+    if (h === 'localhost' || h === '127.0.0.1') {
+      origins.add(`http://${h}:${port}`);
+    }
+  });
+
+  return origins;
+}
+const ALLOWED_ORIGINS = buildAllowedOrigins();
+
 // Rate Limiting globals
 const rateLimits = new Map();
 const WINDOW_MS = 15 * 60 * 1000;
@@ -83,7 +164,23 @@ function getSession(req) {
 }
 
 function requireAdmin(req, res) {
+  // If request originates from customer portal, return 404 (for APIs) or redirect to home (for pages)
+  if (!isOwnerPortal(req)) {
+    if (req.url.startsWith('/api/')) {
+      sendJson(res, 404, { error: 'Not found' });
+    } else {
+      res.writeHead(302, { Location: '/' });
+      res.end();
+    }
+    return false;
+  }
+  // Independent session authentication check
   if (getSession(req)) return true;
+
+  if (req.url.startsWith('/api/')) {
+    sendJson(res, 401, { error: 'Unauthorized' });
+    return false;
+  }
   res.writeHead(302, { Location: '/login.html' });
   res.end();
   return false;
@@ -453,7 +550,8 @@ async function serveStatic(req, res, pathname) {
   }
   
   // Hard blocklist for sensitive files/folders
-  const blockList = ['.env', 'package.json', 'package-lock.json', 'server.js', 'auth.js', 'db.js', 'razorpay.js', 'migrate-schema.js', '.git'];
+  // app-config.js is served dynamically (see /app-config.js route) — block static fallback.
+  const blockList = ['.env', 'package.json', 'package-lock.json', 'server.js', 'auth.js', 'db.js', 'razorpay.js', 'migrate-schema.js', '.git', 'app-config.js'];
   if (blockList.some(block => filePath.includes(block))) {
     sendText(res, 403, 'Forbidden');
     return;
@@ -480,24 +578,34 @@ async function serveStatic(req, res, pathname) {
 // ---------------------------------------------------------------------------
 
 const server = http.createServer(async (req, res) => {
+  const requestHost = getRequestHost(req);
+
+  // TASK 2: Reject Unknown / Unrecognized Hosts
+  if (!isKnownHost(req)) {
+    console.warn(`[Security Alert] Rejected request from unknown host "${requestHost}" | Method: ${req.method} | URL: ${req.url} | IP: ${req.socket.remoteAddress}`);
+    return sendJson(res, 421, { error: 'Misdirected Request: Unrecognized Host header' });
+  }
+
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
   const pathname = requestUrl.pathname;
-  const allowedOrigins = [
-    'https://www.swadeshinatural.com',
-    'https://swadeshinatural.com'
-  ];
 
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
+  // TASK 3: Tighten CORS — validate origin strictly against allowlist
+  const origin = req.headers.origin ? req.headers.origin.trim().toLowerCase() : null;
+  const isOriginAllowed = origin && ALLOWED_ORIGINS.has(origin);
+
+  if (isOriginAllowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   }
-  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  
+
   applySecurityHeaders(res);
 
   if (req.method === 'OPTIONS') {
+    if (origin && !isOriginAllowed) {
+      return sendJson(res, 403, { error: 'Forbidden cross-origin request' });
+    }
     res.writeHead(204);
     return res.end();
   }
@@ -506,15 +614,50 @@ const server = http.createServer(async (req, res) => {
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && pathname.startsWith('/api/')) {
     const reqOrigin = req.headers.origin || req.headers.referer;
     if (reqOrigin) {
-      const originUrl = new URL(reqOrigin);
-      if (!allowedOrigins.includes(originUrl.origin) && originUrl.origin !== `http://${req.headers.host}`) {
-        sendJson(res, 403, { error: 'Forbidden cross-origin request' });
-        return;
+      try {
+        const originUrl = new URL(reqOrigin);
+        if (!ALLOWED_ORIGINS.has(originUrl.origin.toLowerCase())) {
+          return sendJson(res, 403, { error: 'Forbidden cross-origin request' });
+        }
+      } catch (e) {
+        return sendJson(res, 403, { error: 'Invalid origin header' });
       }
     }
   }
 
     try {
+    // ---- /app-config.js — served dynamically; mode is derived per-request from Host header ----
+    if (pathname === '/app-config.js') {
+      // Determine mode for THIS specific request — not a global constant.
+      // A single server instance can serve 'customer' to yourdomain.com
+      // and 'owner' to owner.yourdomain.com simultaneously.
+      const mode = isOwnerPortal(req) ? 'owner' : 'customer';
+      const configJs = [
+        '/* Swadeshi Natural Products — App Config (server-generated, do not edit) */',
+        '(function (root) {',
+        '  \'use strict\';',
+        '  var MODE = \'' + mode + '\';',
+        '  var MODES = Object.freeze({ CUSTOMER: \'customer\', OWNER: \'owner\' });',
+        '  root.APP_CONFIG = Object.freeze({',
+        '    mode: MODE,',
+        '    MODES: MODES,',
+        '    isCustomer: function () { return MODE === MODES.CUSTOMER; },',
+        '    isOwner:    function () { return MODE === MODES.OWNER; },',
+        '    /** setMode() is disabled — mode is determined by the request Host header. */',
+        '    setMode: function () {',
+        '      console.warn(\"[APP_CONFIG] Mode is host-controlled. Access the owner domain to use the admin portal.\");',
+        '    }',
+        '  });',
+        '  console.info(\"[APP_CONFIG] Portal mode \\u2192 \\\"\" + MODE + \"\\\" (host: \" + location.hostname + \")\");',
+        '}(typeof window !== \'undefined\' ? window : this));'
+      ].join('\n');
+      res.writeHead(200, {
+        'Content-Type': 'application/javascript; charset=utf-8',
+        'Cache-Control': 'no-store, no-cache'
+      });
+      return res.end(configJs);
+    }
+
     // ---- auth ----
     if (pathname === '/api/auth/google' && req.method === 'GET') {
       if (!checkRateLimit(req, 'auth', MAX_AUTH_REQS, WINDOW_MS)) {
@@ -580,19 +723,26 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { orders: rows.map(rowToOrder) });
     }
     if (pathname === '/api/login' && req.method === 'POST') {
-      if (!checkRateLimit(req, 'auth', MAX_AUTH_REQS, WINDOW_MS)) {
-        return sendJson(res, 429, { error: 'Too many requests' });
-      }
       const body = await readBody(req);
-      if (String(body.username || '') === adminUsername && String(body.password || '') === adminPassword) {
-        const token = createSession(adminUsername);
-        setSessionCookie(res, token);
-        return sendJson(res, 200, { ok: true, user: { username: adminUsername } });
+      // If payload contains username, this is an Admin login attempt
+      if (body && body.username !== undefined) {
+        if (!isOwnerPortal(req)) return sendJson(res, 404, { error: 'Not found' });
+        if (!checkRateLimit(req, 'auth', MAX_AUTH_REQS, WINDOW_MS)) {
+          return sendJson(res, 429, { error: 'Too many requests' });
+        }
+        if (String(body.username || '') === adminUsername && String(body.password || '') === adminPassword) {
+          const token = createSession(adminUsername);
+          setSessionCookie(res, token);
+          return sendJson(res, 200, { ok: true, user: { username: adminUsername } });
+        }
+        return sendJson(res, 401, { error: 'Invalid username or password' });
       }
-      return sendJson(res, 401, { error: 'Invalid username or password' });
+      // If payload contains identifier, let request flow through to customer login below...
     }
 
     if (pathname === '/api/logout' && req.method === 'POST') {
+      // Customer-portal requests: return 404 so the endpoint is invisible.
+      if (isCustomerPortal(req)) return sendJson(res, 404, { error: 'Not found' });
       const cookies = parseCookies(req.headers.cookie);
       // Admin logout – clear session and cookie
       if (cookies.swadeshi_admin_session) {
@@ -742,12 +892,27 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ---- static / admin / login ----
+    //
+    // Customer portal  (yourdomain.com)       — admin routes are fully invisible.
+    //   /admin  and /admin.html → 302 to /
+    //   /login  and /login.html → 302 to /
+    //   /api/login, /api/logout → 404 (handled above)
+    //
+    // Owner portal (owner.yourdomain.com) — full admin panel with session auth.
     if (pathname === '/admin' || pathname === '/admin.html') {
+      if (isCustomerPortal(req)) {
+        res.writeHead(302, { Location: '/' });
+        return res.end();
+      }
       if (!requireAdmin(req, res)) return;
       return serveStatic(req, res, '/admin.html');
     }
 
     if (pathname === '/login' || pathname === '/login.html') {
+      if (isCustomerPortal(req)) {
+        res.writeHead(302, { Location: '/' });
+        return res.end();
+      }
       return serveStatic(req, res, '/login.html');
     }
 

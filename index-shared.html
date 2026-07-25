@@ -2577,11 +2577,22 @@
     </div>
   </footer>
 
+  <!-- Global App Configuration (must load before page scripts) -->
+  <script src="/app-config.js"></script>
+
   <script>
     const API_BASE = "https://api.swadeshinatural.com";
     const CART_STORAGE_KEY = 'swadeshi_cart';
     const PRODUCTS_STORAGE_KEY = 'swadeshi_products';
 
+    // ── APP_MODE: Customer storefront ─────────────────────────────
+    // APP_CONFIG is loaded before this script via /app-config.js.
+    // This page intentionally shows ONLY customer-facing features:
+    //   products, categories, cart, checkout, login, order tracking.
+    // Any owner-only UI (admin nav, product management, inventory,
+    // order management, dashboard) must be gated with:
+    //   if (APP_CONFIG.isOwner()) { … }
+    // ─────────────────────────────────────────────────────────────
 
     // CODEx: language and page interactions
     const LANGUAGE_KEY = 'swadeshi_language';
