@@ -1,8 +1,6 @@
 require('dotenv').config();
-
 const http = require('http');
-
-const fs = require('fs/promises'); // still needed: serveStatic() reads html/css/images from disk
+const fs = require('fs/promises');
 const path = require('path');
 const { URL } = require('url');
 const crypto = require('crypto');
@@ -651,9 +649,11 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 429, { error: 'Too many requests' });
       }
       const clientId = process.env.GOOGLE_CLIENT_ID;
-      const isLocal = requestHost === 'localhost' || requestHost === '127.0.0.1';
-      const proto = isLocal ? 'http' : 'https';
-      const redirectUri = `${proto}://${req.headers.host}/api/auth/google/callback`;
+      const isLocal = req.headers.host.startsWith('localhost') || req.headers.host.startsWith('127.0.0.1');
+console.log({ host: req.headers.host, requestHost, isLocal });
+const redirectUri = isLocal
+  ? `http://${req.headers.host}/api/auth/google/callback`
+  : 'https://api.swadeshinatural.com/api/auth/google/callback';
       const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile`;
       res.writeHead(302, { Location: url });
       return res.end();
@@ -661,15 +661,17 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/auth/google/callback' && req.method === 'GET') {
       const code = requestUrl.searchParams.get('code');
-      const isLocal = requestHost === 'localhost' || requestHost === '127.0.0.1';
+      const isLocal = req.headers.host.startsWith('localhost') || req.headers.host.startsWith('127.0.0.1');
+      console.log({ host: req.headers.host, requestHost, isLocal });
       const frontendUrl = isLocal ? `http://${req.headers.host}` : 'https://www.swadeshinatural.com';
       if (!code) {
         res.writeHead(302, { Location: `${frontendUrl}/` });
         return res.end();
       }
       try {
-        const proto = isLocal ? 'http' : 'https';
-        const redirectUri = `${proto}://${req.headers.host}/api/auth/google/callback`;
+        const redirectUri = isLocal
+          ? `http://${req.headers.host}/api/auth/google/callback`
+          : 'https://api.swadeshinatural.com/api/auth/google/callback';
         const tokens = await getGoogleTokens({
           code,
           clientId: process.env.GOOGLE_CLIENT_ID,
