@@ -674,12 +674,15 @@ const server = http.createServer(async (req, res) => {
         return res.end();
       }
       try {
-        const proto = isLocal ? 'http' : 'https';
+        const forwardedProto = req.headers['x-forwarded-proto']?.split(',')[0];
+        const proto = forwardedProto || (isLocal ? 'http' : 'https');
+        const redirectUri = `${proto}://${req.headers.host}/api/auth/google/callback`;
+
         const tokens = await getGoogleTokens({
           code,
           clientId: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          redirectUri: `${proto}://${req.headers.host}/api/auth/google/callback`
+          redirectUri
         });
         const profile = await getGoogleUser(tokens);
 
