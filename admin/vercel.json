@@ -12,6 +12,10 @@
             "dest": "https://api.swadeshinatural.com/api/$1"
         },
         {
+            "src": "/(.*\\.(js|css|png|jpg|jpeg|svg|ico|json|woff|woff2|ttf))",
+            "dest": "/$1"
+        },
+        {
             "src": "/",
             "dest": "/login.html"
         },
@@ -33,7 +37,3 @@
         },
         {
             "src": "/(.*)",
-            "dest": "/login.html"
-        }
-    ]
-}
