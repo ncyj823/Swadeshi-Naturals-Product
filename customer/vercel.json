@@ -16,22 +16,6 @@
             "dest": "/$1"
         },
         {
-            "src": "/login",
-            "dest": "/login.html"
-        },
-        {
-            "src": "/login.html",
-            "dest": "/login.html"
-        },
-        {
-            "src": "/profile",
-            "dest": "/profile.html"
-        },
-        {
-            "src": "/profile.html",
-            "dest": "/profile.html"
-        },
-        {
             "src": "/",
             "dest": "/index.html"
         },
