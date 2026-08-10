@@ -1,11 +1,5 @@
 {
     "version": 2,
-    "builds": [
-        {
-            "src": "**/*",
-            "use": "@vercel/static"
-        }
-    ],
     "routes": [
         {
             "src": "/api/(.*)",
@@ -13,11 +7,27 @@
         },
         {
             "src": "/",
+            "dest": "/login.html"
+        },
+        {
+            "src": "/admin",
             "dest": "/admin.html"
         },
         {
-            "src": "/(.*)",
+            "src": "/admin.html",
             "dest": "/admin.html"
+        },
+        {
+            "src": "/login",
+            "dest": "/login.html"
+        },
+        {
+            "src": "/login.html",
+            "dest": "/login.html"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/login.html"
         }
     ]
 }
