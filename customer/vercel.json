@@ -2,7 +2,7 @@
     "version": 2,
     "builds": [
         {
-            "src": "index.html",
+            "src": "**/*",
             "use": "@vercel/static"
         }
     ],
@@ -10,6 +10,34 @@
         {
             "src": "/api/(.*)",
             "dest": "https://api.swadeshinatural.com/api/$1"
+        },
+        {
+            "src": "/(.*\\.(js|css|png|jpg|jpeg|svg|ico|json|woff|woff2|ttf|webp))",
+            "dest": "/$1"
+        },
+        {
+            "src": "/login",
+            "dest": "/login.html"
+        },
+        {
+            "src": "/login.html",
+            "dest": "/login.html"
+        },
+        {
+            "src": "/profile",
+            "dest": "/profile.html"
+        },
+        {
+            "src": "/profile.html",
+            "dest": "/profile.html"
+        },
+        {
+            "src": "/",
+            "dest": "/index.html"
+        },
+        {
+            "src": "/index.html",
+            "dest": "/index.html"
         },
         {
             "src": "/(.*)",
