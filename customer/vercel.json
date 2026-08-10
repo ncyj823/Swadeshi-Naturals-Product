@@ -16,6 +16,10 @@
             "dest": "/$1"
         },
         {
+            "src": "/(.*\\.html)",
+            "dest": "/$1"
+        },
+        {
             "src": "/",
             "dest": "/index.html"
         },
