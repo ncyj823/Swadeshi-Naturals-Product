@@ -648,11 +648,11 @@ const server = http.createServer(async (req, res) => {
       if (!checkRateLimit(req, 'auth', MAX_AUTH_REQS, WINDOW_MS)) {
         return sendJson(res, 429, { error: 'Too many requests' });
       }
-        const clientId = process.env.GOOGLE_CLIENT_ID;
-        const isLocal = requestHost === 'localhost' || requestHost === '127.0.0.1';
-        const forwardedProto = req.headers['x-forwarded-proto']?.split(',')[0];
-        const proto = forwardedProto || (isLocal ? 'http' : 'https');
-        const redirectUri = `${proto}://${req.headers.host}/api/auth/google/callback`;
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      const isLocal = requestHost === 'localhost' || requestHost === '127.0.0.1';
+      const forwardedProto = req.headers['x-forwarded-proto']?.split(',')[0];
+      const proto = forwardedProto || (isLocal ? 'http' : 'https');
+      const redirectUri = `${proto}://${req.headers.host}/api/auth/google/callback`;
       const url =
         `https://accounts.google.com/o/oauth2/v2/auth` +
         `?client_id=${clientId}` +
