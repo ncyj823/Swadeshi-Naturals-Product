@@ -1737,43 +1737,7 @@
       padding: 24px;
     }
 
-    .checkout-order-summary {
-      background: var(--cream);
-      border-radius: 8px;
-      padding: 14px 16px;
-      margin-bottom: 20px;
-      font-size: 13px;
-      color: var(--text-mid);
-    }
 
-    .checkout-order-summary .summary-title {
-      font-weight: 700;
-      color: var(--brown-dark);
-      margin-bottom: 8px;
-      font-size: 13px;
-    }
-
-    .summary-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 4px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .summary-item:last-child {
-      border-bottom: none;
-    }
-
-    .summary-total {
-      display: flex;
-      justify-content: space-between;
-      font-weight: 700;
-      color: var(--brown-dark);
-      font-size: 15px;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 2px solid var(--border);
-    }
 
     .co-field {
       margin-bottom: 16px;
@@ -2499,14 +2463,7 @@
           style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--text-muted);">&#x2715;</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:20px;">
-        <div class="checkout-order-summary">
-          <div class="summary-title">&#x1F6D2; Order Summary</div>
-          <div id="checkoutSummaryItems"></div>
-          <div class="summary-total">
-            <span>Total</span>
-            <span id="checkoutSummaryTotal">&#x20B9;0.00</span>
-          </div>
-        </div>
+
         <div class="co-field-row">
           <div class="co-field">
             <label>Full Name *</label>
@@ -3122,16 +3079,7 @@
     });
   </script>
 
-  <div class="checkout-body">
-    <!-- Order Summary -->
-    <div class="checkout-order-summary">
-      <div class="summary-title">🛒 Order Summary</div>
-      <div id="checkoutSummaryItems"></div>
-      <div class="summary-total">
-        <span>Total</span>
-        <span id="checkoutSummaryTotal">₹0.00</span>
-      </div>
-    </div>
+
 
     <!-- Customer Details -->
     <div class="co-field-row">
@@ -3199,12 +3147,6 @@
     function openCheckout() {
       const items = cartManager.getCartItems();
       if (!items.length) return;
-
-      // Populate order summary
-      document.getElementById('checkoutSummaryItems').innerHTML = items.map(function (item) {
-        return '<div class="summary-item"><span>' + escapeHtml(item.title) + ' &times; ' + item.quantity + '</span><span>&#x20B9;' + (item.price * item.quantity).toFixed(2) + '</span></div>';
-      }).join('');
-      document.getElementById('checkoutSummaryTotal').textContent = '\u20B9' + cartManager.getTotal().toFixed(2);
 
       // Reset form fields
       ['co-name', 'co-phone', 'co-email', 'co-address', 'co-notes'].forEach(function (id) {
