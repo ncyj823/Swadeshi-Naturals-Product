@@ -6,8 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Swadeshi Natural Products - Admin Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&display=swap"
     rel="stylesheet">
   <style>
     :root {
@@ -16,14 +17,21 @@
       --pine: #1e3320;
       --pine-soft: #2a4a2c;
       --brown: #6b4c2a;
+      --brown-dark: #3b2a1a;
       --parchment: #faf8f2;
       --panel: #ffffff;
       --line: #e7e2d4;
+      --line-soft: #efebdf;
       --ink: #2b2a22;
       --ink-soft: #615f51;
       --ink-faint: #94917f;
       --cream: #f5f0e8;
-      --shadow: 0 24px 80px rgba(30, 51, 32, .18);
+      --turmeric: #c17f2e;
+      --rust: #a4392b;
+      --rust-bg: #fbeae6;
+      --sage-bg: #eef2e3;
+      --sage-text: #4f6630;
+      --shadow: 0 24px 80px rgba(30, 51, 32, .14);
     }
 
     * {
@@ -34,15 +42,23 @@
 
     body {
       min-height: 100vh;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Poppins', 'Noto Sans Telugu', -apple-system, sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(107, 76, 42, .16), transparent 34%),
-        radial-gradient(circle at bottom right, rgba(138, 154, 82, .16), transparent 30%),
+        radial-gradient(circle at top left, rgba(107, 76, 42, .12), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(138, 154, 82, .14), transparent 30%),
         var(--parchment);
       color: var(--ink);
       display: grid;
       place-items: center;
       padding: 24px;
+    }
+
+    .brand-mark,
+    .brand-name,
+    .hero-copy h1,
+    .panel h2,
+    .serif {
+      font-family: 'Playfair Display', 'Noto Sans Telugu', Georgia, serif;
     }
 
     .login-shell {
@@ -88,13 +104,11 @@
       color: var(--pine);
       display: grid;
       place-items: center;
-      font-family: 'Lora', serif;
       font-weight: 700;
-      font-size: 20px;
+      font-size: 22px;
     }
 
     .brand-name {
-      font-family: 'Lora', serif;
       font-size: 24px;
       font-weight: 600;
       line-height: 1.1;
@@ -113,17 +127,16 @@
     }
 
     .hero-copy h1 {
-      font-family: 'Lora', serif;
-      font-size: 48px;
-      line-height: 1.05;
+      font-size: 44px;
+      line-height: 1.08;
       margin-top: 18px;
       margin-bottom: 14px;
     }
 
     .hero-copy p {
-      font-size: 15px;
+      font-size: 14px;
       line-height: 1.7;
-      color: rgba(255, 255, 255, .78);
+      color: rgba(255, 255, 255, .82);
     }
 
     .hero-card {
@@ -167,7 +180,7 @@
 
     .hero-card .mini-text {
       font-size: 13px;
-      color: rgba(255, 255, 255, .84);
+      color: rgba(255, 255, 255, .88);
       line-height: 1.45;
     }
 
@@ -185,6 +198,7 @@
       border-radius: 14px;
       background: rgba(255, 255, 255, .08);
       border: 1px solid rgba(255, 255, 255, .1);
+      font-size: 13px;
     }
 
     .bullet-dot {
@@ -203,7 +217,6 @@
     }
 
     .panel h2 {
-      font-family: 'Lora', serif;
       font-size: 28px;
       margin-bottom: 8px;
       color: var(--pine);
@@ -241,13 +254,21 @@
       background: #fff;
       color: var(--ink);
       padding: 13px 14px;
-      font: inherit;
+      font-family: inherit;
+      font-size: 14px;
       outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     input:focus {
       border-color: var(--olive);
-      box-shadow: 0 0 0 3px rgba(138, 154, 82, .14);
+      box-shadow: 0 0 0 3px rgba(138, 154, 82, .16);
+    }
+
+    .field-hint {
+      font-size: 11px;
+      color: var(--ink-faint);
+      line-height: 1.4;
     }
 
     .actions {
@@ -260,9 +281,11 @@
       border: none;
       border-radius: 14px;
       padding: 13px 16px;
-      font: inherit;
-      font-weight: 700;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 14px;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
 
     .primary {
@@ -275,7 +298,7 @@
     }
 
     .secondary {
-      background: #f6f4ec;
+      background: var(--cream);
       color: var(--ink);
       border: 1px solid var(--line);
     }
@@ -284,11 +307,121 @@
       background: #ece6d7;
     }
 
+    /* Auth Tab Navigation */
+    .auth-tabs {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .auth-tab-btn {
+      background: none;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--ink-faint);
+      padding-bottom: 10px;
+      position: relative;
+      outline: none;
+      transition: color 0.2s ease;
+    }
+
+    .auth-tab-btn:hover {
+      color: var(--pine);
+    }
+
+    .auth-tab-btn.active {
+      color: var(--pine);
+    }
+
+    .auth-tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--olive);
+      border-radius: 2px 2px 0 0;
+    }
+
+    /* Google Sign-in Button */
+    .google-btn {
+      background: #ffffff;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+      transition: all 0.2s ease;
+    }
+
+    .google-btn:hover {
+      background: #faf8f5;
+      border-color: #d8d0c0;
+      box-shadow: 0 4px 10px rgba(30, 51, 32, 0.08);
+    }
+
+    /* Auth Divider */
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      margin: 20px 0;
+      color: var(--ink-faint);
+      font-size: 12px;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+
+    .auth-divider span {
+      padding: 0 12px;
+    }
+
+    /* Status Notifications */
     .status {
-      margin-top: 8px;
+      margin-top: 14px;
       font-size: 13px;
-      color: var(--ink-soft);
+      line-height: 1.4;
       min-height: 20px;
+      border-radius: 10px;
+      transition: all 0.25s ease;
+    }
+
+    .status.error {
+      background: var(--rust-bg);
+      color: var(--rust);
+      border: 1px solid rgba(164, 57, 43, 0.18);
+      padding: 10px 14px;
+    }
+
+    .status.success {
+      background: var(--sage-bg);
+      color: var(--sage-text);
+      border: 1px solid rgba(79, 102, 48, 0.18);
+      padding: 10px 14px;
+    }
+
+    .status.info {
+      background: var(--cream);
+      color: var(--ink-soft);
+      border: 1px solid var(--line);
+      padding: 10px 14px;
     }
 
     .footer {
@@ -297,17 +430,21 @@
       color: var(--ink-faint);
     }
 
-    .helper {
-      margin-top: 12px;
-      font-size: 12px;
-      color: var(--ink-faint);
-      line-height: 1.5;
+    .back-storefront {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 18px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-soft);
+      text-decoration: none;
+      transition: color 0.2s ease;
+      cursor: pointer;
     }
 
-    .helper code {
-      background: #f4f1e8;
-      padding: 2px 5px;
-      border-radius: 6px;
+    .back-storefront:hover {
+      color: var(--pine);
     }
 
     .signin-note {
@@ -325,6 +462,19 @@
 
     .signin-note strong {
       color: var(--pine);
+    }
+
+    .helper {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--ink-faint);
+      line-height: 1.5;
+    }
+
+    .helper code {
+      background: #f4f1e8;
+      padding: 2px 5px;
+      border-radius: 6px;
     }
 
     @media (max-width: 920px) {
@@ -349,15 +499,11 @@
       .hero,
       .panel {
         border-radius: 20px;
-      }
-
-      .hero,
-      .panel {
         padding: 22px;
       }
 
       .hero-copy h1 {
-        font-size: 30px;
+        font-size: 28px;
       }
 
       .panel h2 {
@@ -399,8 +545,7 @@
           <div class="hero-bullets">
             <div class="bullet"><span class="bullet-dot"></span>Secure admin session with cookie-based auth</div>
             <div class="bullet"><span class="bullet-dot"></span>Same product data powers both storefront and admin</div>
-            <div class="bullet"><span class="bullet-dot"></span>Save, edit, delete, and publish products from one place
-            </div>
+            <div class="bullet"><span class="bullet-dot"></span>Save, edit, delete, and publish products from one place</div>
           </div>
         </div>
       </div>
@@ -443,6 +588,12 @@
       window.location.href = `${apiBase}/api/auth/google`;
     }
 
+    function showStatus(el, message, type) {
+      if (!el) return;
+      el.textContent = message;
+      el.className = 'status ' + (type || 'info');
+    }
+
     if (window.APP_CONFIG && window.APP_CONFIG.isCustomer && window.APP_CONFIG.isCustomer()) {
       // 1. Update titles & text for customer portal
       document.title = "Swadeshi Natural Products - Customer Login";
@@ -476,13 +627,13 @@
       const panel = document.querySelector('.panel');
       if (panel) {
         panel.innerHTML = `
-          <div class="auth-tabs" style="display:flex; gap:16px; margin-bottom:24px; border-bottom:1px solid var(--line); padding-bottom:8px;">
-            <button id="tab-signin" class="auth-tab-btn active" style="background:none; border:none; font-size:16px; font-weight:600; cursor:pointer; color:var(--pine); border-bottom:2px solid var(--olive); padding-bottom:8px; outline:none;">Sign In</button>
-            <button id="tab-signup" class="auth-tab-btn" style="background:none; border:none; font-size:16px; font-weight:600; cursor:pointer; color:var(--ink-faint); padding-bottom:8px; outline:none;">Register</button>
+          <div class="auth-tabs">
+            <button id="tab-signin" class="auth-tab-btn active">Sign In</button>
+            <button id="tab-signup" class="auth-tab-btn">Register</button>
           </div>
 
-          <div id="google-auth-section" style="margin-bottom:24px;">
-            <button class="primary" id="google-login-btn" style="background:#fff; color:#444; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; gap:10px; width:100%; height:46px; border-radius:10px; font-weight:600; cursor:pointer; font-size:14px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+          <div id="google-auth-section">
+            <button class="google-btn" id="google-login-btn">
               <svg width="18" height="18" viewBox="0 0 24 24">
                 <path fill="#ea4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.51 14.99 1 12 1 7.24 1 3.2 3.73 1.25 7.72l3.85 2.99C6.01 7.23 8.78 5.04 12 5.04z"/>
                 <path fill="#4285f4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.27H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.58l3.73 2.89c2.18-2.01 3.7-4.98 3.7-8.71z"/>
@@ -491,10 +642,8 @@
               </svg>
               Continue with Google
             </button>
-            <div style="display:flex; align-items:center; margin:20px 0; color:var(--ink-faint); font-size:12px;">
-              <div style="flex:1; height:1px; background:var(--line);"></div>
-              <span style="padding:0 10px;">or authenticate using credentials</span>
-              <div style="flex:1; height:1px; background:var(--line);"></div>
+            <div class="auth-divider">
+              <span>or authenticate using credentials</span>
             </div>
           </div>
 
@@ -507,7 +656,7 @@
               <label for="signin-password">Password</label>
               <input id="signin-password" type="password" required placeholder="Enter password">
             </div>
-            <button class="primary" type="submit" style="width:100%; height:46px; border-radius:10px; margin-top:8px;">Sign In</button>
+            <button class="primary" type="submit" style="width:100%; margin-top:8px;">Sign In</button>
           </form>
 
           <form id="customer-signup-form" style="display:none;">
@@ -526,13 +675,13 @@
             <div class="field">
               <label for="signup-password">Password</label>
               <input id="signup-password" type="password" required placeholder="At least 8 characters">
-              <span style="font-size:10px; color:var(--ink-faint); display:block; margin-top:4px;">Must contain uppercase, lowercase, number, and special character.</span>
+              <span class="field-hint">Must contain uppercase, lowercase, number, and special character.</span>
             </div>
-            <button class="primary" type="submit" style="width:100%; height:46px; border-radius:10px; margin-top:8px;">Create Account</button>
+            <button class="primary" type="submit" style="width:100%; margin-top:8px;">Create Account</button>
           </form>
 
           <div id="otp-section" style="display:none;">
-            <h3 style="margin-bottom:12px; color:var(--pine);">OTP Verification</h3>
+            <h3 style="margin-bottom:12px; color:var(--pine);" class="serif">OTP Verification</h3>
             <p style="font-size:13px; color:var(--ink-soft); margin-bottom:16px;">We have sent a verification code to your mobile number. Enter it below to complete sign in.</p>
             <form id="otp-form">
               <input type="hidden" id="otp-user-id">
@@ -540,11 +689,15 @@
                 <label for="otp-code">Verification Code</label>
                 <input id="otp-code" required placeholder="6-digit code" pattern="\\d{6}" maxlength="6">
               </div>
-              <button class="primary" type="submit" style="width:100%; height:46px; border-radius:10px;">Verify & Continue</button>
+              <button class="primary" type="submit" style="width:100%;">Verify & Continue</button>
             </form>
           </div>
 
-          <div class="status" id="login-status" style="margin-top:16px;"></div>
+          <div class="status" id="login-status"></div>
+
+          <div>
+            <a href="/" class="back-storefront">← Back to Storefront</a>
+          </div>
         `;
 
         // Switch tabs
@@ -558,30 +711,24 @@
 
         tabSignin.addEventListener('click', () => {
           tabSignin.classList.add('active');
-          tabSignin.style.color = 'var(--pine)';
-          tabSignin.style.borderBottom = '2px solid var(--olive)';
           tabSignup.classList.remove('active');
-          tabSignup.style.color = 'var(--ink-faint)';
-          tabSignup.style.borderBottom = 'none';
-          signinForm.style.display = 'block';
+          signinForm.style.display = 'grid';
           signupForm.style.display = 'none';
           googleAuthSec.style.display = 'block';
           otpSection.style.display = 'none';
           statusEl.textContent = '';
+          statusEl.className = 'status';
         });
 
         tabSignup.addEventListener('click', () => {
           tabSignup.classList.add('active');
-          tabSignup.style.color = 'var(--pine)';
-          tabSignup.style.borderBottom = '2px solid var(--olive)';
           tabSignin.classList.remove('active');
-          tabSignin.style.color = 'var(--ink-faint)';
-          tabSignin.style.borderBottom = 'none';
           signinForm.style.display = 'none';
-          signupForm.style.display = 'block';
+          signupForm.style.display = 'grid';
           googleAuthSec.style.display = 'block';
           otpSection.style.display = 'none';
           statusEl.textContent = '';
+          statusEl.className = 'status';
         });
 
         // Continue with Google
@@ -592,8 +739,7 @@
         // Sign In submission
         signinForm.addEventListener('submit', async (event) => {
           event.preventDefault();
-          statusEl.textContent = 'Verifying credentials...';
-          statusEl.style.color = 'var(--ink-soft)';
+          showStatus(statusEl, 'Verifying credentials...', 'info');
           const payload = {
             identifier: document.getElementById('signin-identifier').value.trim(),
             password: document.getElementById('signin-password').value
@@ -615,22 +761,19 @@
               signinForm.style.display = 'none';
               googleAuthSec.style.display = 'none';
               otpSection.style.display = 'block';
-              statusEl.textContent = 'OTP sent to registered phone.';
-              statusEl.style.color = 'var(--olive)';
+              showStatus(statusEl, 'OTP sent to registered phone.', 'success');
             } else {
               window.location.href = '/';
             }
           } catch (error) {
-            statusEl.textContent = error.message || 'Login failed';
-            statusEl.style.color = 'red';
+            showStatus(statusEl, error.message || 'Login failed', 'error');
           }
         });
 
         // Sign Up submission
         signupForm.addEventListener('submit', async (event) => {
           event.preventDefault();
-          statusEl.textContent = 'Creating account...';
-          statusEl.style.color = 'var(--ink-soft)';
+          showStatus(statusEl, 'Creating account...', 'info');
           const payload = {
             name: document.getElementById('signup-name').value.trim(),
             email: document.getElementById('signup-email').value.trim(),
@@ -649,20 +792,17 @@
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Registration failed');
 
-            statusEl.textContent = 'Account created successfully!';
-            statusEl.style.color = 'var(--olive)';
+            showStatus(statusEl, 'Account created successfully!', 'success');
             setTimeout(() => { window.location.href = '/'; }, 1000);
           } catch (error) {
-            statusEl.textContent = error.message || 'Registration failed';
-            statusEl.style.color = 'red';
+            showStatus(statusEl, error.message || 'Registration failed', 'error');
           }
         });
 
         // OTP verification
         document.getElementById('otp-form').addEventListener('submit', async (event) => {
           event.preventDefault();
-          statusEl.textContent = 'Verifying code...';
-          statusEl.style.color = 'var(--ink-soft)';
+          showStatus(statusEl, 'Verifying code...', 'info');
           const payload = {
             userId: document.getElementById('otp-user-id').value,
             otp: document.getElementById('otp-code').value.trim()
@@ -679,12 +819,10 @@
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'OTP verification failed');
 
-            statusEl.textContent = 'Sign in successful!';
-            statusEl.style.color = 'var(--olive)';
+            showStatus(statusEl, 'Sign in successful!', 'success');
             setTimeout(() => { window.location.href = '/'; }, 1000);
           } catch (error) {
-            statusEl.textContent = error.message || 'OTP verification failed';
-            statusEl.style.color = 'red';
+            showStatus(statusEl, error.message || 'OTP verification failed', 'error');
           }
         });
       }
@@ -697,7 +835,7 @@
       });
       form.addEventListener('submit', async function (event) {
         event.preventDefault();
-        statusEl.textContent = 'Signing in...';
+        showStatus(statusEl, 'Signing in...', 'info');
         const payload = { username: form.username.value.trim(), password: form.password.value };
         try {
           const apiBase = (window.APP_CONFIG && window.APP_CONFIG.apiBase) || '';
@@ -711,7 +849,7 @@
           if (!response.ok) throw new Error(data.error || 'Login failed');
           window.location.href = '/admin.html';
         } catch (error) {
-          statusEl.textContent = error.message || 'Login failed';
+          showStatus(statusEl, error.message || 'Login failed', 'error');
         }
       });
     }
