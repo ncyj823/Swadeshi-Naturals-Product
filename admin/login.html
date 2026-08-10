@@ -512,7 +512,7 @@
         const statusEl = document.getElementById('login-status');
 
         document.getElementById('back-home-btn').addEventListener('click', () => {
-          window.location.href = '/';
+          window.location.href = window.APP_CONFIG.storefrontUrl;
         });
 
         tabSignin.addEventListener('click', () => {
@@ -634,7 +634,7 @@
       const statusEl = document.getElementById('login-status');
 
       document.getElementById('back-home-btn').addEventListener('click', function () {
-        window.location.href = '/';
+        window.location.href = window.APP_CONFIG.storefrontUrl;
       });
 
       form.addEventListener('submit', async function (event) {
