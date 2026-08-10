@@ -18,14 +18,16 @@
     MODE = 'owner';
   }
 
-  // apiBase resolution
+  // apiBase & storefrontUrl resolution
   var API_BASE = isLocal && typeof location !== 'undefined' ? location.origin : 'https://api.swadeshinatural.com';
+  var STOREFRONT_URL = isLocal && typeof location !== 'undefined' ? location.origin : 'https://www.swadeshinatural.com';
 
   var MODES = Object.freeze({ CUSTOMER: 'customer', OWNER: 'owner' });
 
   root.APP_CONFIG = Object.freeze({
     mode: MODE,
     apiBase: API_BASE,
+    storefrontUrl: STOREFRONT_URL,
     MODES: MODES,
     isCustomer: function () { return MODE === MODES.CUSTOMER; },
     isOwner:    function () { return MODE === MODES.OWNER; },
@@ -34,5 +36,5 @@
     }
   });
 
-  console.info('[APP_CONFIG] Loaded frontend config -> mode: ' + MODE + ', apiBase: ' + API_BASE);
+  console.info('[APP_CONFIG] Loaded frontend config -> mode: ' + MODE + ', apiBase: ' + API_BASE + ', storefrontUrl: ' + STOREFRONT_URL);
 }(typeof window !== 'undefined' ? window : this));

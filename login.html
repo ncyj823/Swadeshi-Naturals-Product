@@ -512,7 +512,8 @@
         const statusEl = document.getElementById('login-status');
 
         document.getElementById('back-home-btn').addEventListener('click', () => {
-          window.location.href = '/';
+          const storefrontUrl = (window.APP_CONFIG && window.APP_CONFIG.storefrontUrl) || 'https://www.swadeshinatural.com';
+          window.location.href = storefrontUrl;
         });
 
         tabSignin.addEventListener('click', () => {
