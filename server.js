@@ -861,22 +861,19 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/api/orders/track' && req.method === 'GET') {
-      const query = String(requestUrl.searchParams.get('q') || '').trim().toLowerCase();
-      if (!query) return sendJson(res, 400, { error: 'Order ID or phone number is required' });
-      const digits = query.replace(/\D/g, '');
-      // Same matching semantics as the JSON version, just run against a DB read
-      // instead of an in-memory array — order volume here doesn't justify
-      // pushing the fuzzy-match logic into SQL and risking behavior drift.
-      const allOrders = await fetchAllOrders();
-      const matches = allOrders.filter((order) => {
-        const normalizedId = String(order.id || '').toLowerCase();
-        const idMatch = normalizedId === query || normalizedId.includes(query.replace(/^#/, ''));
-        const phoneDigits = String(order.customerPhone || '').replace(/\D/g, '');
-        const phoneMatch = digits.length >= 4 && phoneDigits.endsWith(digits);
-        return idMatch || phoneMatch;
-      }).map(publicOrder);
-      return sendJson(res, 200, { ok: true, orders: matches });
-    }
+    if (!requireCustomer(req, res)) return;
+    const { rows } = await pool.query(
+    `SELECT *
+     FROM orders
+     WHERE user_id = $1
+     ORDER BY created_at DESC`,
+    [req.customerId]
+  );
+    return sendJson(res, 200, {
+    ok: true,
+    orders: rows.map(rowToOrder)
+  });
+}
 
     if (pathname === '/api/orders' && req.method === 'GET') {
       if (!requireAdmin(req, res)) return;
@@ -921,11 +918,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/login' || pathname === '/login.html') {
-      if (isCustomerPortal(req)) {
-        res.writeHead(302, { Location: '/' });
-        return res.end();
-      }
-      return serveStatic(req, res, '/login.html');
+    return serveStatic(req, res, '/login.html');
     }
 
     // ------------------- Customer Auth API -------------------
