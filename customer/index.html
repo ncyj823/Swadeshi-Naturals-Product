@@ -150,20 +150,25 @@
       --nav-height: 48px;
     }
 
-    html {
-      overflow-x: hidden;
-    }
+  html {
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  }
 
-    body {
-      font-family: 'Poppins', sans-serif;
-      color: var(--text-dark);
-      background: var(--white);
-      font-size: 14px;
-      line-height: 1.6;
-      padding-bottom: 80px;
-      overflow-x: hidden;
-      width: 100%;
-    }
+  body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding-bottom: 80px;
+  font-family: 'Poppins', sans-serif;
+  color: var(--text-dark);
+  background: var(--white);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  overflow-y: visible;
+  }
 
     body.cart-active {
       padding-bottom: 120px;
