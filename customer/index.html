@@ -3661,41 +3661,53 @@
   </style>
 
   <div class="ot-overlay" id="otOverlay">
-    <div class="ot-modal">
-      <div class="ot-header">
-        <h3>📦 My Orders</h3>
-        <button class="ot-close" onclick="closeOrderTracking()">✕</button>
-      </div>
-      <div class="ot-body">
-        <div class="ot-search-section">
-          <p>Enter your phone number to view all your orders and track their status.</p>
-          <div class="ot-input-row">
-            <input class="ot-input" type="tel" id="ot-phone" placeholder="Enter your 10-digit phone number"
-              maxlength="10" />
-            <button class="ot-search-btn" onclick="trackOrders()">Track Orders</button>
-          </div>
-        </div>
-        <div id="ot-results"></div>
+  <div class="ot-modal">
+    <div class="ot-header">
+      <h3>📦 My Orders</h3>
+      <button class="ot-close" onclick="closeOrderTracking()">✕</button>
+    </div>
+    <div class="ot-body">
+      <div id="ot-results">
+        <div class="ot-loading">🔍 Loading your orders...</div>
       </div>
     </div>
   </div>
+</div>
 
   <script>
-    function openOrderTracking() {
-      document.getElementById('otOverlay').classList.add('open');
-      document.getElementById('ot-phone').value = '';
-      document.getElementById('ot-results').innerHTML = '';
-      setTimeout(() => document.getElementById('ot-phone').focus(), 100);
+  async function openOrderTracking() {
+  const resultsEl = document.getElementById('ot-results');
+
+  try {
+    const profileRes = await fetch(API_BASE + '/api/customer/profile', {
+      credentials: 'include'
+    });
+
+    if (profileRes.status === 401) {
+      window.location.href = '/login.html';
+      return;
     }
+
+    if (!profileRes.ok) {
+      throw new Error('Unable to verify login.');
+    }
+
+    document.getElementById('otOverlay').classList.add('open');
+
+    await trackOrders();
+
+  } catch (err) {
+    console.error('Order authentication check failed:', err);
+    window.location.href = '/login.html';
+  }
+}
     function closeOrderTracking() {
       document.getElementById('otOverlay').classList.remove('open');
     }
     document.getElementById('otOverlay').addEventListener('click', function (e) {
       if (e.target === this) closeOrderTracking();
     });
-    document.getElementById('ot-phone').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') trackOrders();
-    });
+    
 
     function getStatusSteps(status) {
       const steps = [
@@ -3759,51 +3771,83 @@
     </div>`;
     }
 
-    async function trackOrders() {
-      const phone = document.getElementById('ot-phone').value.trim();
-      const resultsEl = document.getElementById('ot-results');
-      if (!phone || phone.length < 10) {
-        resultsEl.innerHTML = `<div class="ot-empty"><div class="icon">📱</div><p>Please enter a valid 10-digit phone number.</p></div>`;
-        return;
-      }
-      resultsEl.innerHTML = `<div class="ot-loading">🔍 Looking up your orders...</div>`;
-      try {
-        const res = await fetch(API_BASE + '/api/orders/track?q=' + encodeURIComponent(phone));
-        const data = await res.json();
-        if (!res.ok || !data.ok) throw new Error(data.error || 'Something went wrong.');
-        const orders = data.orders || [];
-        if (orders.length === 0) {
-          resultsEl.innerHTML = `<div class="ot-empty"><div class="icon">📦</div><p>No orders found for this number.</p><p style="font-size:12px;margin-top:6px;">Make sure you used the same number while ordering.</p></div>`;
-          return;
-        }
-        resultsEl.innerHTML = `
-      <p style="font-size:13px;font-weight:600;color:var(--brown-dark);margin-bottom:14px;">
-        Found ${orders.length} order${orders.length > 1 ? 's' : ''} for your number:
-      </p>
-      <div class="ot-orders-list">${orders.map(renderOrderCard).join('')}</div>`;
-      } catch (err) {
-        console.error(err);
-        resultsEl.innerHTML = `<div class="ot-empty"><div class="icon">⚠️</div><p>Something went wrong. Please try again.</p></div>`;
-      }
-    }
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Check if logged in
-      const cookies = document.cookie;
-      if (cookies.includes('customer_jwt=')) {
-        const authContainer = document.getElementById('auth-link-container');
-        if (authContainer) {
-          authContainer.innerHTML = `
-            <a href="/profile.html">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8" width="20" height="20">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              My Profile
-            </a>
-          `;
-        }
-      }
+  async function trackOrders() {
+  const resultsEl = document.getElementById('ot-results');
+  resultsEl.innerHTML =
+    `<div class="ot-loading"> Loading your orders...</div>`;
+  try {
+    const res = await fetch(API_BASE + '/api/customer/orders', {
+      method: 'GET',
+      credentials: 'include'
     });
+    if (res.status === 401) {
+      window.location.href = '/login.html';
+      return;
+    }
+    const data = await res.json();
+    if (!res.ok || !data.orders) {
+      throw new Error(data.error || 'Something went wrong.');
+    }
+    const orders = data.orders;
+    if (orders.length === 0) {
+      resultsEl.innerHTML = `
+        <div class="ot-empty">
+          <div class="icon">📦</div>
+          <p>You don't have any orders yet.</p>
+        </div>
+      `;
+      return;
+    }
+    resultsEl.innerHTML = `
+      <p style="font-size:13px;font-weight:600;color:var(--brown-dark);margin-bottom:14px;">
+        Your Orders
+      </p>
+      <div class="ot-orders-list">
+        ${orders.map(renderOrderCard).join('')}
+      </div>
+    `;
+  } catch (err) {
+    console.error('Failed to load orders:', err);
+
+    resultsEl.innerHTML = `
+      <div class="ot-empty">
+        <div class="icon">⚠️</div>
+        <p>Unable to load your orders.</p>
+        <p style="font-size:12px;margin-top:6px;">
+          Please try again.
+        </p>
+      </div>
+    `;
+  }
+}
+  document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const res = await fetch(API_BASE + '/api/customer/profile', {
+      credentials: 'include'
+    });
+
+    if (!res.ok) return;
+
+    const authContainer = document.getElementById('auth-link-container');
+
+    if (authContainer) {
+      authContainer.innerHTML = `
+        <a href="/profile.html">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"
+               stroke-width="1.8" width="20" height="20">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0z
+                     M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          My Profile
+        </a>
+      `;
+    }
+  } catch (err) {
+    console.debug('Customer not logged in.');
+  }
+});
   </script>
 </body>
 
