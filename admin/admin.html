@@ -2325,13 +2325,38 @@
       }
 
       function statusSelectHtml(orderId, status) {
-        var options = ['Paid', 'Pending', 'COD', 'Dispatched', 'Cancelled'];
-        return '<select class="status-select" data-order-id="' + orderId + '">' +
-          options.map(function (opt) {
-            return '<option value="' + opt + '"' + (opt === status ? ' selected' : '') + '>' + opt + '</option>';
-          }).join('') +
-          '</select>';
-      }
+  var statusRank = {
+    'COD': 0,
+    'Paid': 1,
+    'Pending': 2,
+    'Dispatched': 3
+  };
+
+  var current = status || 'Pending';
+
+  // Cancelled is terminal.
+  if (current === 'Cancelled') {
+    return '<select class="status-select" data-order-id="' + orderId + '">' +
+      '<option value="Cancelled" selected>Cancelled</option>' +
+      '</select>';
+  }
+
+  var options = ['COD', 'Paid', 'Pending', 'Dispatched'];
+
+  var currentRank = statusRank[current];
+
+  options = options.filter(function (opt) {
+    return statusRank[opt] >= currentRank;
+  });
+
+  return '<select class="status-select" data-order-id="' + orderId + '">' +
+    options.map(function (opt) {
+      return '<option value="' + opt + '"' +
+        (opt === current ? ' selected' : '') +
+        '>' + opt + '</option>';
+    }).join('') +
+    '</select>';
+}
 
       document.getElementById('order-filters').addEventListener('click', function (e) {
         var chip = e.target.closest('.chip');
