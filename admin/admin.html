@@ -2311,15 +2311,47 @@
         }).join('');
 
         tbody.querySelectorAll('select.status-select').forEach(function (sel) {
-          sel.addEventListener('change', function () {
-            var orderId = sel.getAttribute('data-order-id');
-            var ord = orders.find(function (o) { return o.id === orderId; });
-            if (ord) { ord.status = sel.value; }
-            saveOrderStatus(orderId, sel.value).catch(function (err) { console.warn('Order save failed:', err.message || err); });
-            renderOrders();
-            renderDashboard();
-          });
-        });
+  sel.addEventListener('change', async function () {
+    var orderId = sel.getAttribute('data-order-id');
+    var ord = orders.find(function (o) {
+      return o.id === orderId;
+    });
+
+    if (!ord) return;
+
+    var oldStatus = ord.status;
+    var newStatus = sel.value;
+
+    try {
+      var updated = await saveOrderStatus(orderId, newStatus);
+
+      if (updated && updated.status) {
+        ord.status = updated.status;
+      } else {
+        ord.status = newStatus;
+      }
+
+      renderOrders();
+      renderDashboard();
+
+    } catch (err) {
+      console.warn(
+        'Order status update failed:',
+        err.message || err
+      );
+
+      // Restore the old status in the UI.
+      ord.status = oldStatus;
+
+      renderOrders();
+
+      alert(
+        err.message ||
+        'This status change is not allowed.'
+      );
+    }
+  });
+});
 
         document.getElementById('orders-count-note').textContent = 'Showing ' + rows.length + ' of ' + orders.length + ' orders';
       }
