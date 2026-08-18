@@ -2604,16 +2604,51 @@
       });
 
       document.getElementById('export-btn').addEventListener('click', function () {
-        var rows = ['Product,SKU,Category,Price,MRP,Discount,Stock,Delivery,Images'];
-        products.forEach(function (p) {
-          rows.push([p.name, p.id, p.catLabel, p.price, p.oldPrice || '', p.discount || '', p.stock, p.delivery || '', (p.images && p.images.length ? p.images : (p.image ? [p.image] : [])).join(' | ')].join(','));
+        function csvCell(value) {
+          var text = String(value == null ? '' : value);
+          if (/[,"\n]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+          return text;
+        }
+
+        var filteredOrders = orders.filter(function (o) {
+          return orderStatusFilter === 'all' || o.status === orderStatusFilter;
+        });
+
+        var rows = ['Order ID,Customer Name,Customer Phone,Customer Email,Products/Items,Amount,Payment Method,Order Status,Order Date,Shipping/Delivery'];
+        filteredOrders.forEach(function (o) {
+          var itemDetails = '';
+          if (Array.isArray(o.itemDetails) && o.itemDetails.length) {
+            itemDetails = o.itemDetails.map(function (it) {
+              var qty = Number(it.quantity || 0);
+              return (it.name || it.title || 'Item') + (qty > 0 ? (' x' + qty) : '');
+            }).join(' | ');
+          } else if (o.items != null) {
+            itemDetails = String(o.items) + ' item' + (Number(o.items) === 1 ? '' : 's');
+          }
+
+          var paymentMethod = o.paymentMethod || o.payment_mode || o.payment || (o.status === 'COD' ? 'COD' : '');
+          var orderDate = o.createdAt || o.orderDate || o.date || '';
+          var shipping = o.address || o.shippingAddress || o.deliveryAddress || o.locality || o.delivery || '';
+
+          rows.push([
+            csvCell(o.id || ''),
+            csvCell(o.customer || o.customerName || ''),
+            csvCell(o.customerPhone || o.phone || ''),
+            csvCell(o.customerEmail || o.email || ''),
+            csvCell(itemDetails),
+            csvCell(o.amount || o.total || ''),
+            csvCell(paymentMethod),
+            csvCell(o.status || ''),
+            csvCell(orderDate),
+            csvCell(shipping)
+          ].join(','));
         });
         var csv = rows.join('\n');
         var blob = new Blob([csv], { type: 'text/csv' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = 'swadeshi-products.csv';
+        a.download = 'swadeshi-orders.csv';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
