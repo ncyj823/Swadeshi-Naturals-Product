@@ -522,6 +522,73 @@ async function insertOrder(order) {
   return rowToOrder(rows[0]);
 }
 
+function normalizeRequestedItems(itemDetails) {
+  if (!Array.isArray(itemDetails)) return [];
+  const quantityById = new Map();
+  for (const item of itemDetails) {
+    const id = String(item && item.id ? item.id : '').trim();
+    if (!id) continue;
+    const rawQuantity = Number(item.quantity || 0);
+    const quantity = Number.isFinite(rawQuantity) && rawQuantity > 0 ? Math.floor(rawQuantity) : 0;
+    if (!quantity) continue;
+    quantityById.set(id, (quantityById.get(id) || 0) + quantity);
+  }
+  return Array.from(quantityById.entries()).map(([id, quantity]) => ({ id, quantity }));
+}
+
+async function validateOrderItemsAvailability(itemDetails) {
+  const requestedItems = normalizeRequestedItems(itemDetails);
+  if (!requestedItems.length) {
+    return { ok: false, error: 'Order must include at least one valid item.' };
+  }
+
+  const ids = requestedItems.map((item) => item.id);
+  const { rows } = await pool.query(
+    'SELECT id, name, title, stock, active FROM products WHERE id = ANY($1::text[])',
+    [ids]
+  );
+
+  const byId = new Map(rows.map((row) => [String(row.id), row]));
+  const unavailableItems = [];
+
+  for (const item of requestedItems) {
+    const product = byId.get(item.id);
+    if (!product) {
+      unavailableItems.push({ id: item.id, reason: 'not_found', requestedQty: item.quantity, availableStock: 0 });
+      continue;
+    }
+
+    const stock = Number(product.stock || 0);
+    const active = product.active !== false;
+    if (!active || stock <= 0) {
+      unavailableItems.push({
+        id: item.id,
+        name: product.title || product.name || item.id,
+        reason: 'out_of_stock',
+        requestedQty: item.quantity,
+        availableStock: Math.max(0, stock)
+      });
+      continue;
+    }
+
+    if (item.quantity > stock) {
+      unavailableItems.push({
+        id: item.id,
+        name: product.title || product.name || item.id,
+        reason: 'insufficient_stock',
+        requestedQty: item.quantity,
+        availableStock: stock
+      });
+    }
+  }
+
+  return {
+    ok: unavailableItems.length === 0,
+    unavailableItems,
+    requestedItems
+  };
+}
+
 async function updateOrder(id, mergedOrder) {
   const { rows } = await pool.query(
     `UPDATE orders SET
@@ -787,6 +854,17 @@ const server = http.createServer(async (req, res) => {
       try {
         const body = await readBody(req);
         const amount = Number(body.amount);
+        if (!Number.isFinite(amount) || amount <= 0) {
+          return sendJson(res, 400, { error: 'Valid amount is required' });
+        }
+
+        const availability = await validateOrderItemsAvailability(body.itemDetails);
+        if (!availability.ok) {
+          return sendJson(res, 409, {
+            error: availability.error || 'Some items are out of stock.',
+            unavailableItems: availability.unavailableItems || []
+          });
+        }
 
         const order = await razorpay.orders.create({
           amount: Math.round(amount * 100),
@@ -842,7 +920,30 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 429, { error: 'Too many requests' });
       }
       const body = await readBody(req);
+      const availability = await validateOrderItemsAvailability(body.itemDetails);
+      if (!availability.ok) {
+        return sendJson(res, 409, {
+          error: availability.error || 'Some items are out of stock.',
+          unavailableItems: availability.unavailableItems || []
+        });
+      }
+
       const order = normalizeOrder(body);
+      const itemById = new Map();
+      for (const item of order.itemDetails) {
+        const id = String(item && item.id ? item.id : '').trim();
+        if (id && !itemById.has(id)) itemById.set(id, item);
+      }
+      order.itemDetails = availability.requestedItems.map((reqItem) => {
+        const source = itemById.get(reqItem.id) || {};
+        return {
+          id: reqItem.id,
+          name: source.name || source.title || reqItem.id,
+          quantity: reqItem.quantity,
+          price: Number(source.price || 0)
+        };
+      });
+      order.items = availability.requestedItems.reduce((sum, item) => sum + item.quantity, 0);
 
       const cookies = parseCookies(req.headers.cookie);
       if (cookies.customer_jwt) {
