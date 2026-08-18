@@ -639,6 +639,12 @@
       background: var(--brown-accent);
     }
 
+    .add-cart:disabled {
+      background: #a9a9a9;
+      color: #ffffff;
+      cursor: not-allowed;
+    }
+
     /* ===== FEATURED STRIP ===== */
     .featured-strip {
       background: #7a5426;
@@ -2605,7 +2611,7 @@
         'Organic natural products carefully crafted to support your health, vitality and create lasting positive impact through nature.': 'आपके स्वास्थ्य और ऊर्जा के लिए प्रकृति से बने भरोसेमंद प्राकृतिक उत्पाद।',
         'Shop Now': 'अभी खरीदें', 'Top Categories': 'मुख्य श्रेणियां', 'Featured Products': 'विशेष उत्पाद', 'Best Sellers': 'सबसे ज्यादा बिकने वाले',
         'Upcoming Events You Shouldn\'t Miss': 'आने वाले कार्यक्रम', 'Resources': 'संसाधन', 'Customer Reviews': 'ग्राहक समीक्षा',
-        'Cosmetic': 'कॉस्मेटिक', 'Ready to Eat': 'रेडी टू ईट', 'Medicine': 'औषधि', 'Pickle': 'अचार', 'Add to Cart': 'कार्ट में जोड़ें', 'Added! ✓': 'जुड़ गया! ✓',
+        'Cosmetic': 'कॉस्मेटिक', 'Ready to Eat': 'रेडी टू ईट', 'Medicine': 'औषधि', 'Pickle': 'अचार', 'Add to Cart': 'कार्ट में जोड़ें', 'Added! ✓': 'जुड़ गया! ✓', 'Out of Stock': 'स्टॉक खत्म',
         'View Cart': 'कार्ट देखें', 'Total Items:': 'कुल आइटम:', 'Cart is empty': 'कार्ट खाली है', 'Add some products to your cart': 'अपने कार्ट में कुछ उत्पाद जोड़ें', 'Subtotal': 'उप-योग', 'Proceed to Checkout →': 'चेकआउट करें →',
         'Complete Your Order': 'अपना ऑर्डर पूरा करें', 'Order Summary': 'ऑर्डर सारांश', 'Contact Details': 'संपर्क विवरण', 'Full Name': 'पूरा नाम', 'Mobile Number': 'मोबाइल नंबर', 'Email': 'ईमेल', 'Delivery Address': 'डिलीवरी पता', 'Order Notes': 'ऑर्डर नोट्स', 'Back': 'वापस', 'Place Order →': 'ऑर्डर करें →', 'Order Placed Successfully!': 'ऑर्डर सफलतापूर्वक हो गया!', 'Continue Shopping': 'खरीदारी जारी रखें'
       }
@@ -2643,7 +2649,13 @@
       const sectionNames = ['Top Categories', 'Featured Products', 'Best Sellers', 'Upcoming Events You Shouldn\'t Miss', 'Resources', 'Customer Reviews'];
       document.querySelectorAll('.section-title').forEach((el, i) => { if (sectionNames[i]) el.textContent = t(sectionNames[i]); });
       document.querySelectorAll('.cat-label').forEach(el => { el.textContent = t(el.dataset.en || el.textContent.trim()); });
-      document.querySelectorAll('.add-cart').forEach(btn => { if (!btn.classList.contains('is-added')) btn.textContent = t('Add to Cart'); });
+      document.querySelectorAll('.add-cart').forEach(btn => {
+        if (btn.dataset.stockStatus === 'out') {
+          btn.textContent = t('Out of Stock');
+          return;
+        }
+        if (!btn.classList.contains('is-added')) btn.textContent = t('Add to Cart');
+      });
       setText('#viewCartBtn', 'View Cart');
       const emptyTitle = document.querySelector('#cartEmpty h3'); if (emptyTitle) emptyTitle.textContent = t('Cart is empty');
       const emptyText = document.querySelector('#cartEmpty p'); if (emptyText) emptyText.textContent = t('Add some products to your cart');
@@ -2746,6 +2758,24 @@
 
       addItem(product) {
         const id = product.id;
+        const liveProduct = cachedProducts.find(item => String(item.id) === String(id));
+        if (cachedProducts.length && !liveProduct) {
+          alert('This product is unavailable right now. Please refresh and try again.');
+          return false;
+        }
+        const availableStock = liveProduct ? Number(liveProduct.stock || 0) : Number(product.stock);
+        const nextQty = (this.cart[id]?.quantity || 0) + 1;
+
+        if (Number.isFinite(availableStock) && availableStock <= 0) {
+          alert('This product is currently out of stock.');
+          return false;
+        }
+
+        if (Number.isFinite(availableStock) && availableStock > 0 && nextQty > availableStock) {
+          alert(`Only ${availableStock} item(s) available for this product.`);
+          return false;
+        }
+
         if (this.cart[id]) {
           this.cart[id].quantity += 1;
         } else {
@@ -2756,6 +2786,7 @@
         }
         this.saveCart();
         this.showCartBar();
+        return true;
       }
 
       removeItem(id) {
@@ -2932,6 +2963,7 @@
         description: product.description || '',
         image: images[0] || product.image_url || 'images/image-10.png',
         images,
+        stock: Number(product.stock || 0),
         rating: Number(product.rating || 4.5),
         featured: product.featured !== false,
         active: product.active !== false
@@ -2942,6 +2974,7 @@
       const oldPrice = product.oldPrice > product.price ? `<span class="price-old">₹${product.oldPrice}</span>` : '';
       const discount = product.discount > 0 ? `<span class="price-old" style="text-decoration:none;color:#7a5030;">${product.discount}% off</span>` : '';
       const delivery = product.delivery ? `<div class="prod-sub" style="margin-top:6px;">${escapeHtml(product.delivery)}</div>` : '';
+      const outOfStock = Number(product.stock || 0) <= 0;
       return `
       <div class="prod-card">
         <div class="prod-img"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}" /></div>
@@ -2951,10 +2984,39 @@
           <div class="stars">${starString(product.rating)}</div>
           <div class="prod-price"><span class="price-new">₹${product.price.toFixed(2)}</span>${oldPrice}${discount}</div>
           ${delivery}
-          <button class="add-cart" data-product-id="${escapeHtml(product.id)}" data-product-title="${escapeHtml(product.title)}">${t('Add to Cart')}</button>
+          <button class="add-cart" data-stock-status="${outOfStock ? 'out' : 'in'}" data-product-stock="${Number(product.stock || 0)}" data-product-id="${escapeHtml(product.id)}" data-product-title="${escapeHtml(product.title)}" ${outOfStock ? 'disabled' : ''}>${t(outOfStock ? 'Out of Stock' : 'Add to Cart')}</button>
         </div>
       </div>
     `;
+    }
+
+    async function validateCartAvailability() {
+      const items = cartManager.getCartItems();
+      if (!items.length) {
+        return { ok: true, unavailable: [] };
+      }
+
+      const source = cachedProducts.length ? cachedProducts : [];
+      let latestProducts = source;
+
+      try {
+        const response = await fetch(API_BASE + '/api/products', { cache: 'no-store' });
+        if (response.ok) {
+          latestProducts = (await response.json()).map(normalizeProduct).filter(product => product.active !== false);
+          cachedProducts = latestProducts;
+        }
+      } catch (error) {
+        console.warn('Could not refresh products before checkout:', error.message || error);
+      }
+
+      const stockMap = new Map(latestProducts.map(product => [String(product.id), Number(product.stock || 0)]));
+      const unavailable = items.filter(item => {
+        const stock = stockMap.get(String(item.id));
+        if (!Number.isFinite(stock)) return true;
+        return stock <= 0 || item.quantity > stock;
+      });
+
+      return { ok: unavailable.length === 0, unavailable };
     }
 
     // Initialize cart manager
@@ -3029,6 +3091,7 @@
       document.addEventListener('click', function (event) {
         const button = event.target.closest('.add-cart');
         if (!button) return;
+        if (button.disabled || button.dataset.stockStatus === 'out') return;
 
         const cardForTitle = button.closest('.prod-card');
         const productTitle = button.dataset.productTitle || cardForTitle?.querySelector('.prod-name')?.textContent?.trim() || 'Product';
@@ -3046,10 +3109,12 @@
           title: productTitle,
           price: price,
           image: image,
-          subtitle: subtitle
+          subtitle: subtitle,
+          stock: Number(button.dataset.productStock || 0)
         };
 
-        cartManager.addItem(product);
+        const added = cartManager.addItem(product);
+        if (!added) return;
 
         // Show confirmation
         button.classList.add('is-added');
@@ -3192,13 +3257,20 @@
     // ══════════════════════════════════════
     // CHECKOUT FUNCTIONS
     // ══════════════════════════════════════
-    function openCheckout() {
+    async function openCheckout() {
       const items = cartManager.getCartItems();
       if (!items.length) return;
 
       if (!currentCustomer) {
         alert("Please log in or register to place your order.");
         window.location.href = "/login.html";
+        return;
+      }
+
+      const availability = await validateCartAvailability();
+      if (!availability.ok) {
+        const names = availability.unavailable.map(item => item.title).join(', ');
+        alert(`Some items are out of stock or have limited stock: ${names}. Please update your cart before checkout.`);
         return;
       }
 
@@ -3262,6 +3334,13 @@
       const total = cartManager.getTotal();
       if (!items.length) { alert('Your cart is empty.'); return; }
 
+      const availability = await validateCartAvailability();
+      if (!availability.ok) {
+        const names = availability.unavailable.map(item => item.title).join(', ');
+        alert(`Some items are out of stock or have limited stock: ${names}. Please update your cart before placing the order.`);
+        return;
+      }
+
       btn.disabled = true;
       btn.textContent = 'Starting Payment...';
 
@@ -3276,7 +3355,12 @@
         const payRes = await fetch(API_BASE + '/api/payment/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: total }),
+          body: JSON.stringify({
+            amount: total,
+            itemDetails: items.map(function (item) {
+              return { id: item.id, quantity: item.quantity };
+            })
+          }),
           signal: controller.signal
         });
 
