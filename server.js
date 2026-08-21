@@ -928,6 +928,11 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
+      const customerName = String(body.customer || body.customer_name || body.name || '').trim();
+      if (customerName.split(/\s+/).filter(Boolean).length < 2) {
+        return sendJson(res, 400, { error: 'Please enter your full name.' });
+      }
+
       const order = normalizeOrder(body);
       const itemById = new Map();
       for (const item of order.itemDetails) {
