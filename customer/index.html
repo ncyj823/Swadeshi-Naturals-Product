@@ -3319,14 +3319,25 @@
         return;
       }
 
-      const name = document.getElementById('co-name').value.trim();
+      let name = document.getElementById('co-name').value.trim();
+      const allNames = document.querySelectorAll('#co-name');
+      if (!name && allNames.length > 1) {
+        const found = Array.from(allNames).find(el => el.value.trim());
+        if (found) name = found.value.trim();
+      }
       const phone = document.getElementById('co-phone').value.trim();
       const email = document.getElementById('co-email').value.trim();
       const address = document.getElementById('co-address').value.trim();
       const notes = document.getElementById('co-notes').value.trim();
 
       // Validation
-      if (!name) { alert('Please enter your full name.'); document.getElementById('co-name').focus(); return; }
+      const nameParts = name.split(/\s+/).filter(Boolean);
+      if (nameParts.length < 2) { 
+        alert('Please enter your full name.'); 
+        const targetEl = Array.from(allNames).find(el => el.offsetParent !== null) || document.getElementById('co-name');
+        if (targetEl) targetEl.focus(); 
+        return; 
+      }
       if (!phone || phone.length < 10) { alert('Please enter a valid 10-digit phone number.'); document.getElementById('co-phone').focus(); return; }
       if (!address) { alert('Please enter your delivery address.'); document.getElementById('co-address').focus(); return; }
 
