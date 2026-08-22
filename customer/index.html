@@ -2824,6 +2824,60 @@
         this.updateHeader();
         this.updateCartDrawer();
         this.updateCartBar();
+        this.syncProductCards();
+      }
+
+      syncProductCards() {
+        document.querySelectorAll('.prod-card').forEach(card => {
+          const addBtn = card.querySelector('.add-cart');
+          if (!addBtn) return;
+          const productTitle = addBtn.dataset.productTitle || card.querySelector('.prod-name')?.textContent?.trim() || 'Product';
+          const productId = addBtn.dataset.productId || productTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+          if (!productId) return;
+          
+          const cartItem = this.cart[productId];
+          let controlContainer = card.querySelector('.card-qty-control');
+          
+          if (cartItem && cartItem.quantity > 0) {
+            addBtn.style.display = 'none';
+            if (!controlContainer) {
+              controlContainer = document.createElement('div');
+              controlContainer.className = 'card-qty-control';
+              controlContainer.style.display = 'flex';
+              controlContainer.style.alignItems = 'center';
+              controlContainer.style.justifyContent = 'space-between';
+              controlContainer.style.background = 'var(--green-cta)';
+              controlContainer.style.borderRadius = '6px';
+              controlContainer.style.padding = '4px 8px';
+              controlContainer.style.marginTop = '10px';
+              controlContainer.style.color = 'white';
+              controlContainer.innerHTML = `
+                <button class="card-qty-btn decrease" data-cart-id="${productId}" style="background: transparent; color: white; border: none; font-size: 18px; width: 30px; cursor: pointer; padding: 0;">-</button>
+                <span class="card-qty-val" style="font-weight: 600; font-size: 14px;"></span>
+                <button class="card-qty-btn increase" data-cart-id="${productId}" style="background: transparent; color: white; border: none; font-size: 18px; width: 30px; cursor: pointer; padding: 0;">+</button>
+              `;
+              addBtn.parentNode.insertBefore(controlContainer, addBtn.nextSibling);
+              
+              controlContainer.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const btn = e.target.closest('.card-qty-btn');
+                if (!btn) return;
+                const id = btn.dataset.cartId;
+                const currentQty = this.cart[id]?.quantity || 0;
+                if (btn.classList.contains('increase')) {
+                  this.updateQuantity(id, currentQty + 1);
+                } else if (btn.classList.contains('decrease')) {
+                  this.updateQuantity(id, currentQty - 1);
+                }
+              });
+            }
+            controlContainer.style.display = 'flex';
+            controlContainer.querySelector('.card-qty-val').textContent = cartItem.quantity;
+          } else {
+            addBtn.style.display = 'block';
+            if (controlContainer) controlContainer.style.display = 'none';
+          }
+        });
       }
 
       updateHeader() {
@@ -3084,6 +3138,10 @@
       const bestSellersGrid = document.querySelector('.prod-grid');
       if (bestSellersGrid) {
         bestSellersGrid.innerHTML = (bestSellerProducts.length ? bestSellerProducts : activeProducts.slice(0, 6)).map(productCardHtml).join('');
+      }
+      
+      if (typeof cartManager !== 'undefined' && cartManager) {
+        cartManager.syncProductCards();
       }
     }
 
