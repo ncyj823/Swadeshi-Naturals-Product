@@ -216,14 +216,22 @@ function clearSessionCookie(res) {
 
 // Customer cookie helpers
 function setCustomerCookie(res, token) {
+  const payload = verifyCustomerToken(token) || {};
+  const customerId = payload.customerId || payload.id || '';
   res.setHeader(
     'Set-Cookie',
-    `customer_jwt=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict`
+    [
+      `customer_jwt=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict`,
+      `customer_uid=${encodeURIComponent(customerId)}; Path=/; Secure; SameSite=Strict`
+    ]
   );
 }
 
 function clearCustomerCookie(res) {
-  res.setHeader('Set-Cookie', 'customer_jwt=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0');
+  res.setHeader('Set-Cookie', [
+    'customer_jwt=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0',
+    'customer_uid=; Path=/; SameSite=Strict; Max-Age=0'
+  ]);
 }
 
 // Middleware: verify customer JWT on each request
