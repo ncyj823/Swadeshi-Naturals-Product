@@ -106,6 +106,7 @@
 
     async function logout() {
       await fetch('/api/customer/logout', { method: 'POST' });
+      localStorage.removeItem('swadeshi_cart');
       window.location.href = '/';
     }
 

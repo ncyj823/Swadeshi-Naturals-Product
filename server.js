@@ -250,13 +250,16 @@ function requireCustomer(req, res) {
   try {
     const payload = verifyCustomerToken(token);
     req.customerId = payload.customerId || payload.id;
+    if (!cookies.customer_uid) {
+      setCustomerCookie(res, token);
+    }
     return true;
   } catch (e) {
     if (req.url.startsWith('/api/')) {
       sendJson(res, 401, { error: 'Unauthorized' });
       return false;
     }
-    res.writeHead(302, { Location: '/' });
+    res.writeHead(302, { Location: '/login.html' });
     res.end();
     return false;
   }
