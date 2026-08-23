@@ -740,7 +740,7 @@ const server = http.createServer(async (req, res) => {
         `google_oauth_state=${encodeURIComponent(state)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`
       );
 
-      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile&state=${encodeURIComponent(state)}`;
+      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile&state=${encodeURIComponent(state)}&prompt=select_account`;
       res.writeHead(302, { Location: url });
       return res.end();
     }
@@ -997,19 +997,19 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/api/orders/track' && req.method === 'GET') {
-    if (!requireCustomer(req, res)) return;
-    const { rows } = await pool.query(
-    `SELECT *
+      if (!requireCustomer(req, res)) return;
+      const { rows } = await pool.query(
+        `SELECT *
      FROM orders
      WHERE user_id = $1
      ORDER BY created_at DESC`,
-    [req.customerId]
-  );
-    return sendJson(res, 200, {
-    ok: true,
-    orders: rows.map(rowToOrder)
-  });
-}
+        [req.customerId]
+      );
+      return sendJson(res, 200, {
+        ok: true,
+        orders: rows.map(rowToOrder)
+      });
+    }
 
     if (pathname === '/api/orders' && req.method === 'GET') {
       if (!requireAdmin(req, res)) return;
@@ -1017,66 +1017,66 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, orders);
     }
 
-  if (pathname.startsWith('/api/orders/') && req.method === 'PATCH') {
-  if (!requireAdmin(req, res)) return;
-  const id = decodeURIComponent(pathname.split('/').pop());
-  const body = await readBody(req);
+    if (pathname.startsWith('/api/orders/') && req.method === 'PATCH') {
+      if (!requireAdmin(req, res)) return;
+      const id = decodeURIComponent(pathname.split('/').pop());
+      const body = await readBody(req);
 
-  const { rows } = await pool.query(
-    'SELECT * FROM orders WHERE id = $1',
-    [id]
-  );
+      const { rows } = await pool.query(
+        'SELECT * FROM orders WHERE id = $1',
+        [id]
+      );
 
-  if (!rows[0]) {
-    return sendJson(res, 404, {
-      ok: false,
-      error: 'Order not found'
-    });
-  }
+      if (!rows[0]) {
+        return sendJson(res, 404, {
+          ok: false,
+          error: 'Order not found'
+        });
+      }
 
-  const existing = rowToOrder(rows[0]);
-  const oldStatus = String(existing.status || 'Pending');
-  const newStatus = String(body.status || oldStatus);
+      const existing = rowToOrder(rows[0]);
+      const oldStatus = String(existing.status || 'Pending');
+      const newStatus = String(body.status || oldStatus);
 
-  // Normal forward-only order lifecycle.
-  const statusRank = {
-    'COD': 0,
-    'Paid': 1,
-    'Pending': 2,
-    'Dispatched': 3
-  };
+      // Normal forward-only order lifecycle.
+      const statusRank = {
+        'COD': 0,
+        'Paid': 1,
+        'Pending': 2,
+        'Dispatched': 3
+      };
 
-  // Cancelled is a terminal status.
-  if (oldStatus === 'Cancelled' && newStatus !== 'Cancelled') {
-    return sendJson(res, 409, {
-      ok: false,
-      error: 'Cancelled orders cannot be moved to another status.'
-    });
-  }
+      // Cancelled is a terminal status.
+      if (oldStatus === 'Cancelled' && newStatus !== 'Cancelled') {
+        return sendJson(res, 409, {
+          ok: false,
+          error: 'Cancelled orders cannot be moved to another status.'
+        });
+      }
 
-  // Prevent moving backwards.
-  if (
-    newStatus !== 'Cancelled' &&
-    statusRank[newStatus] !== undefined &&
-    statusRank[oldStatus] !== undefined &&
-    statusRank[newStatus] < statusRank[oldStatus]
-  ) {
-    return sendJson(res, 409, {
-      ok: false,
-      error: `Order cannot move backwards from ${oldStatus} to ${newStatus}.`
-    });
-  }
-  const merged = normalizeOrder({
-    ...existing,
-    ...body,
-    id
-  });
-  const updated = await updateOrder(id, merged);
-  return sendJson(res, 200, {
-    ok: true,
-    order: updated
-  });
-}
+      // Prevent moving backwards.
+      if (
+        newStatus !== 'Cancelled' &&
+        statusRank[newStatus] !== undefined &&
+        statusRank[oldStatus] !== undefined &&
+        statusRank[newStatus] < statusRank[oldStatus]
+      ) {
+        return sendJson(res, 409, {
+          ok: false,
+          error: `Order cannot move backwards from ${oldStatus} to ${newStatus}.`
+        });
+      }
+      const merged = normalizeOrder({
+        ...existing,
+        ...body,
+        id
+      });
+      const updated = await updateOrder(id, merged);
+      return sendJson(res, 200, {
+        ok: true,
+        order: updated
+      });
+    }
     // ---- customers ----
     if (pathname === '/api/customers' && req.method === 'GET') {
       if (!requireAdmin(req, res)) return;
@@ -1102,7 +1102,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/login' || pathname === '/login.html') {
-    return serveStatic(req, res, '/login.html');
+      return serveStatic(req, res, '/login.html');
     }
 
     // ------------------- Customer Auth API -------------------
