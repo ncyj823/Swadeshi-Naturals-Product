@@ -2419,55 +2419,14 @@
           <span>Total:</span>
           <span id="cartTotal" style="color:var(--brown-dark);">&#x20B9;0.00</span>
         </div>
-        <button onclick="openCheckout()"
+        <button onclick="openCheckout(this)"
           style="width:100%;background:var(--green-cta);color:white;padding:13px;border-radius:6px;font-weight:700;font-size:14px;cursor:pointer;border:none;">
-          Proceed to Details &rarr;
+          Proceed to Pay &rarr;
         </button>
       </div>
     </div>
 
-    <!-- ── STEP 2: Details Form ── -->
-    <div id="checkoutForm" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
-      <div
-        style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:white;">
-        <button onclick="closeCheckout()"
-          style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--brown-dark);font-weight:700;padding:6px 0;display:flex;align-items:center;gap:4px;">&larr;
-          Back</button>
-        <h3 style="font-size:16px;font-weight:700;color:var(--brown-dark);">Your Details</h3>
-        <button onclick="cartManager.closeDrawer()"
-          style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--text-muted);">&#x2715;</button>
-      </div>
-      <div style="flex:1;overflow-y:auto;padding:20px;">
 
-        <div class="co-field-row">
-          <div class="co-field">
-            <label>Full Name *</label>
-            <input type="text" id="co-name" placeholder="Your full name" />
-          </div>
-          <div class="co-field">
-            <label>Phone Number *</label>
-            <input type="tel" id="co-phone" placeholder="10-digit mobile number" />
-          </div>
-        </div>
-        <div class="co-field">
-          <label>Email Address</label>
-          <input type="email" id="co-email" placeholder="Optional &mdash; for order confirmation" />
-        </div>
-        <div class="co-field">
-          <label>Delivery Address *</label>
-          <textarea id="co-address" placeholder="House/Flat No, Street, Area, City, Pincode"></textarea>
-        </div>
-        <div class="co-field">
-          <label>Special Instructions</label>
-          <input type="text" id="co-notes" placeholder="Optional &mdash; any special instructions" />
-        </div>
-      </div>
-      <div style="padding:16px 20px;border-top:1px solid var(--border);flex-shrink:0;background:white;">
-        <button class="btn-place-order" id="placeOrderBtn" onclick="placeOrder()" style="width:100%;">
-          Place Order &amp; Pay &rarr;
-        </button>
-      </div>
-    </div>
 
     <!-- ── STEP 3: Success ── -->
     <div id="checkoutSuccess" style="display:none;height:100%;overflow-y:auto;">
@@ -2530,20 +2489,20 @@
         <div class="footer-col">
           <h4>Privacy Policy</h4>
           <ul>
-            <li><a href="#">Terms of Service</a></li>
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Return Policy</a></li>
-            <li><a href="#">Shipping Info</a></li>
-            <li><a href="#">Contact Us</a></li>
+            <li><a href="/terms.html">Terms of Service</a></li>
+            <li><a href="/privacy.html">Privacy Policy</a></li>
+            <li><a href="/return-policy.html">Return Policy</a></li>
+            <li><a href="/shipping.html">Shipping Info</a></li>
+            <li><a href="/contact.html">Contact Us</a></li>
           </ul>
         </div>
         <div class="footer-col">
           <h4>Connect</h4>
           <ul>
-            <li><a href="#">Instagram</a></li>
-            <li><a href="#">Facebook</a></li>
-            <li><a href="#">YouTube</a></li>
-            <li><a href="#">WhatsApp</a></li>
+            <li><a href="https://instagram.com" target="_blank" rel="noopener noreferrer">Instagram</a></li>
+            <li><a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Facebook</a></li>
+            <li><a href="https://youtube.com" target="_blank" rel="noopener noreferrer">YouTube</a></li>
+            <li><a href="https://wa.me/" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
           </ul>
         </div>
       </div>
@@ -2710,7 +2669,7 @@
       document.querySelectorAll('.btn-cta, .btn-green').forEach(btn => btn.addEventListener('click', event => { event.preventDefault(); document.querySelector('.featured-strip')?.scrollIntoView({ behavior: 'smooth' }); }));
       const rail = document.querySelector('.featured-rail');
       document.querySelectorAll('.featured-arrow').forEach((btn, index) => btn.addEventListener('click', () => rail?.scrollBy({ left: index === 0 ? -290 : 290, behavior: 'smooth' })));
-      document.querySelectorAll('footer a[href="#"]').forEach(link => link.addEventListener('click', event => { event.preventDefault(); applyProductFilter(categoryKey(link.textContent)); }));
+      // Note: Footer generic href="#" links should not be hijacked here globally, as they are now configured individually.
       applyLanguage();
     }
 
@@ -3119,37 +3078,7 @@
 
 
 
-    <!-- Customer Details -->
-    <div class="co-field-row">
-      <div class="co-field">
-        <label>Full Name *</label>
-        <input type="text" id="co-name" placeholder="Your full name" />
-      </div>
-      <div class="co-field">
-        <label>Phone Number *</label>
-        <input type="tel" id="co-phone" placeholder="10-digit mobile number" />
-      </div>
-    </div>
-    <div class="co-field">
-      <label>Email Address</label>
-      <input type="email" id="co-email" placeholder="Optional — for order confirmation" />
-    </div>
-    <div class="co-field">
-      <label>Delivery Address *</label>
-      <textarea id="co-address" placeholder="House/Flat No, Street, Area, City, Pincode"></textarea>
-    </div>
-    <div class="co-field">
-      <label>Special Instructions</label>
-      <input type="text" id="co-notes" placeholder="Optional — any special instructions" />
-    </div>
-  </div>
 
-  <div class="checkout-footer">
-    <button class="btn-back-cart" onclick="closeCheckout()">← Back</button>
-    <button class="btn-place-order" id="placeOrderBtn" onclick="placeOrder()">
-      Place Order →
-    </button>
-  </div>
   </div>
 
   <!-- Success View (hidden initially) -->
@@ -3206,9 +3135,7 @@
             `;
           }
           if (currentCustomer) {
-            if (currentCustomer.name && document.getElementById('co-name')) document.getElementById('co-name').value = currentCustomer.name;
-            if (currentCustomer.phone && document.getElementById('co-phone')) document.getElementById('co-phone').value = currentCustomer.phone;
-            if (currentCustomer.email && document.getElementById('co-email')) document.getElementById('co-email').value = currentCustomer.email;
+            // Check auth state
           }
           return true;
         }
@@ -3245,36 +3172,20 @@
     // ══════════════════════════════════════
     // CHECKOUT FUNCTIONS
     // ══════════════════════════════════════
-    function openCheckout() {
-      const items = cartManager.getCartItems();
-      if (!items.length) return;
-
+    async function openCheckout(btnElement) {
       if (!currentCustomer) {
         alert("Please log in or register to place your order.");
         window.location.href = "/login.html";
         return;
       }
-
-      // Reset form fields
-      ['co-name', 'co-phone', 'co-email', 'co-address', 'co-notes'].forEach(function (id) {
-        document.getElementById(id).value = '';
-      });
-      if (currentCustomer) {
-        if (currentCustomer.name && document.getElementById('co-name')) document.getElementById('co-name').value = currentCustomer.name;
-        if (currentCustomer.phone && document.getElementById('co-phone')) document.getElementById('co-phone').value = currentCustomer.phone;
-        if (currentCustomer.email && document.getElementById('co-email')) document.getElementById('co-email').value = currentCustomer.email;
-      }
-
-      // Show Step 2 inside the drawer — keep drawer open
-      document.getElementById('drawerStep1').style.display = 'none';
-      document.getElementById('checkoutForm').style.display = 'flex';
-      document.getElementById('checkoutSuccess').style.display = 'none';
+      placeOrder(btnElement);
     }
 
     function closeCheckout() {
-      document.getElementById('drawerStep1').style.display = 'flex';
-      document.getElementById('checkoutForm').style.display = 'none';
-      document.getElementById('checkoutSuccess').style.display = 'none';
+      const drawer = document.getElementById('drawerStep1');
+      if (drawer) drawer.style.display = 'flex';
+      const success = document.getElementById('checkoutSuccess');
+      if (success) success.style.display = 'none';
     }
 
 
@@ -3290,33 +3201,36 @@
     }
     window.addEventListener('DOMContentLoaded', preloadRazorpay);
 
-    async function placeOrder() {
+    async function placeOrder(triggerBtn) {
       console.log('1. Pay Now clicked, starting validation');
 
-      const btn = document.getElementById('placeOrderBtn');
+      const btn = triggerBtn || document.querySelector('.btn-place-order');
 
       if (!window.Razorpay) {
         alert("Payment gateway is still loading. Please wait a second and try again.");
         return;
       }
 
-      const name = document.getElementById('co-name').value.trim();
-      const phone = document.getElementById('co-phone').value.trim();
-      const email = document.getElementById('co-email').value.trim();
-      const address = document.getElementById('co-address').value.trim();
-      const notes = document.getElementById('co-notes').value.trim();
+      if (!currentCustomer) {
+        alert("Please log in or register to place your order.");
+        window.location.href = "/login.html";
+        return;
+      }
 
-      // Validation
-      if (!name) { alert('Please enter your full name.'); document.getElementById('co-name').focus(); return; }
-      if (!phone || phone.length < 10) { alert('Please enter a valid 10-digit phone number.'); document.getElementById('co-phone').focus(); return; }
-      if (!address) { alert('Please enter your delivery address.'); document.getElementById('co-address').focus(); return; }
+      const name = currentCustomer.name || 'Customer';
+      const phone = currentCustomer.phone || '';
+      const email = currentCustomer.email || '';
+      const address = currentCustomer.address || currentCustomer.locality || 'Customer Address';
+      const notes = '';
 
       const items = cartManager.getCartItems();
       const total = cartManager.getTotal();
       if (!items.length) { alert('Your cart is empty.'); return; }
 
-      btn.disabled = true;
-      btn.textContent = 'Starting Payment...';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Starting Payment...';
+      }
 
       try {
         console.log('2. Requesting order creation from backend');
@@ -3385,7 +3299,8 @@
               console.log('6. Order saved successfully');
               const orderId = orderData.order && orderData.order.id ? orderData.order.id : '';
               document.getElementById('successOrderId').textContent = orderId ? `Order ID: ${orderId}` : 'Order placed successfully.';
-              document.getElementById('checkoutForm').style.display = 'none';
+              const drawerStep1 = document.getElementById('drawerStep1');
+              if (drawerStep1) drawerStep1.style.display = 'none';
               document.getElementById('checkoutSuccess').style.display = 'block';
 
               // Clear cart
@@ -3426,9 +3341,11 @@
 
         alert(errorMsg);
       } finally {
-        btn.disabled = false;
-        if (btn.textContent === 'Starting Payment...') {
-          btn.textContent = 'Place Order →';
+        if (btn) {
+          btn.disabled = false;
+          if (btn.textContent === 'Starting Payment...') {
+            btn.textContent = 'Proceed to Pay &rarr;';
+          }
         }
       }
     }
