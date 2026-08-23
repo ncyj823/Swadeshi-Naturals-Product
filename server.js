@@ -773,11 +773,11 @@ const server = http.createServer(async (req, res) => {
 
         const token = createCustomerToken(user.id);
         setCustomerCookie(res, token);
-        res.writeHead(302, { Location: `${frontendUrl}/profile.html` });
+        res.writeHead(302, { Location: `${frontendUrl}/` });
         return res.end();
       } catch (err) {
         console.error('Google OAuth Error:', err);
-        res.writeHead(302, { Location: `${frontendUrl}/` });
+        res.writeHead(302, { Location: `${frontendUrl}/login.html?error=google_auth_failed` });
         return res.end();
       }
     }
