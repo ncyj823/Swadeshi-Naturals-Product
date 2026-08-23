@@ -732,17 +732,32 @@ const server = http.createServer(async (req, res) => {
       const isLocal = requestHost === 'localhost' || requestHost === '127.0.0.1';
       const proto = isLocal ? 'http' : 'https';
       const redirectUri = `${proto}://${req.headers.host}/api/auth/google/callback`;
-      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile`;
+
+      // CSRF protection: bind this auth attempt to a random state value,
+      // stored in a short-lived httpOnly cookie and echoed back by Google.
+      const state = crypto.randomUUID();
+      res.setHeader('Set-Cookie',
+        `google_oauth_state=${encodeURIComponent(state)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`
+      );
+
+      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile&state=${encodeURIComponent(state)}`;
       res.writeHead(302, { Location: url });
       return res.end();
     }
 
     if (pathname === '/api/auth/google/callback' && req.method === 'GET') {
       const code = requestUrl.searchParams.get('code');
+      const returnedState = requestUrl.searchParams.get('state');
       const isLocal = requestHost === 'localhost' || requestHost === '127.0.0.1';
       const frontendUrl = isLocal ? `http://${req.headers.host}` : 'https://www.swadeshinatural.com';
-      if (!code) {
-        res.writeHead(302, { Location: `${frontendUrl}/` });
+
+      // Verify state before doing anything else, then clear the cookie either way.
+      const cookies = parseCookies(req.headers.cookie);
+      const expectedState = cookies.google_oauth_state;
+      res.setHeader('Set-Cookie', 'google_oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+
+      if (!code || !returnedState || !expectedState || returnedState !== expectedState) {
+        res.writeHead(302, { Location: `${frontendUrl}/login.html?error=google_auth_failed` });
         return res.end();
       }
       try {
@@ -756,22 +771,26 @@ const server = http.createServer(async (req, res) => {
         });
         const profile = await getGoogleUser(tokens);
 
-        let result = await pool.query(`SELECT id FROM users WHERE google_id = $1 OR email = $2`, [profile.id, profile.email]);
-        let user = result.rows[0];
-        if (!user) {
+        // NOTE: unified onto the same `customers` table used by password/OTP
+        // signup (previously this wrote to a separate `users` table, which
+        // meant Google-authenticated customers had no row in `customers` and
+        // /api/customer/profile + /api/customer/orders silently failed for them).
+        let result = await pool.query(`SELECT id FROM customers WHERE google_id = $1 OR email = $2`, [profile.id, profile.email]);
+        let customer = result.rows[0];
+        if (!customer) {
           const insertRes = await pool.query(
-            `INSERT INTO users (google_id, email, name, picture) VALUES ($1, $2, $3, $4) RETURNING id`,
+            `INSERT INTO customers (google_id, email, name, picture) VALUES ($1, $2, $3, $4) RETURNING id`,
             [profile.id, profile.email, profile.name, profile.picture]
           );
-          user = insertRes.rows[0];
+          customer = insertRes.rows[0];
         } else {
           await pool.query(
-            `UPDATE users SET google_id = $1, name = $2, picture = $3 WHERE id = $4 AND google_id IS NULL`,
-            [profile.id, profile.name, profile.picture, user.id]
+            `UPDATE customers SET google_id = $1, name = COALESCE(name, $2), picture = $3 WHERE id = $4 AND google_id IS NULL`,
+            [profile.id, profile.name, profile.picture, customer.id]
           );
         }
 
-        const token = createCustomerToken(user.id);
+        const token = createCustomerToken(customer.id);
         setCustomerCookie(res, token);
         res.writeHead(302, { Location: `${frontendUrl}/` });
         return res.end();
@@ -784,7 +803,7 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/customer/profile' && req.method === 'GET') {
       if (!requireCustomer(req, res)) return;
-      const { rows } = await pool.query('SELECT name, email, picture, created_at FROM users WHERE id = $1', [req.customerId]);
+      const { rows } = await pool.query('SELECT name, email, picture, created_at FROM customers WHERE id = $1', [req.customerId]);
       return sendJson(res, 200, { user: rows[0] });
     }
 
