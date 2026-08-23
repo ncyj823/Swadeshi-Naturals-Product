@@ -317,17 +317,32 @@
       height: 20px;
     }
 
+    .header-icons a.cart-btn,
+    .header-icons .cart-btn,
     .cart-btn {
       background: #5a7a2e;
-      color: #ffffff;
+      color: #ffffff !important;
       padding: 8px 14px;
       border-radius: 6px;
       font-size: 12px;
       display: flex;
       align-items: center;
       gap: 6px;
+      text-decoration: none;
     }
 
+    .header-icons a.cart-btn,
+    .header-icons a.cart-btn:hover,
+    .header-icons a.cart-btn:focus,
+    .header-icons a.cart-btn:visited,
+    .header-icons a.cart-btn:active,
+    .header-icons .cart-btn,
+    .header-icons .cart-btn * {
+      color: #ffffff !important;
+    }
+
+    .header-icons a.cart-btn svg,
+    .header-icons .cart-btn svg,
     .cart-btn svg {
       color: #ffffff !important;
       stroke: #ffffff !important;
