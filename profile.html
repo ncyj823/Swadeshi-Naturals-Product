@@ -59,9 +59,9 @@
   <script>
     async function fetchProfile() {
       try {
-        const res = await fetch('/api/customer/profile');
+        const res = await fetch('/api/customer/profile', { credentials: 'include' });
         if (res.status === 401) {
-          window.location.href = '/';
+          window.location.href = '/login.html';
           return;
         }
         const data = await res.json();
@@ -70,9 +70,9 @@
         document.getElementById('profile-section').innerHTML = `
           <img src="${pic}" alt="Profile Picture">
           <div class="profile-info">
-            <h2>${user.name}</h2>
-            <p>${user.email}</p>
-            <p>Member since: ${new Date(user.created_at).toLocaleDateString()}</p>
+            <h2>${user.name || 'Customer'}</h2>
+            <p>${user.email || user.phone || ''}</p>
+            <p>Member since: ${user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Recent'}</p>
           </div>
         `;
       } catch (err) {
@@ -82,7 +82,11 @@
 
     async function fetchOrders() {
       try {
-        const res = await fetch('/api/customer/orders');
+        const res = await fetch('/api/customer/orders', { credentials: 'include' });
+        if (res.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
         const data = await res.json();
         const orders = data.orders || [];
         const tbody = document.getElementById('orders-list');
@@ -93,10 +97,10 @@
         tbody.innerHTML = orders.map(o => `
           <tr>
             <td>${o.id}</td>
-            <td>${new Date(o.createdAt).toLocaleDateString()}</td>
+            <td>${o.createdAt ? new Date(o.createdAt).toLocaleDateString() : ''}</td>
             <td>${o.items}</td>
             <td>₹${o.amount}</td>
-            <td><span class="status ${o.status.toLowerCase() === 'paid' ? 'paid' : 'pending'}">${o.status}</span></td>
+            <td><span class="status ${o.status && o.status.toLowerCase() === 'paid' ? 'paid' : 'pending'}">${o.status || 'Paid'}</span></td>
           </tr>
         `).join('');
       } catch (err) {
@@ -105,8 +109,15 @@
     }
 
     async function logout() {
-      await fetch('/api/customer/logout', { method: 'POST' });
+      try {
+        await fetch('/api/customer/logout', { method: 'POST', credentials: 'include' });
+      } catch (e) {
+        console.error(e);
+      }
       localStorage.removeItem('swadeshi_cart');
+      localStorage.removeItem('swadeshi_last_uid');
+      localStorage.removeItem('customer_user');
+      sessionStorage.clear();
       window.location.href = '/';
     }
 

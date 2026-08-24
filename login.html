@@ -472,6 +472,10 @@
         });
 
         googleLoginBtn.addEventListener('click', () => {
+          localStorage.removeItem('swadeshi_cart');
+          localStorage.removeItem('swadeshi_last_uid');
+          localStorage.removeItem('customer_user');
+          sessionStorage.clear();
           const apiBase = window.APP_CONFIG.apiBase || '';
           window.location.href = apiBase + '/api/auth/google';
         });
@@ -527,6 +531,10 @@
               document.getElementById('google-login-btn').style.display = 'none';
               showStatus(statusEl, 'OTP sent to phone.', 'success');
             } else {
+              localStorage.removeItem('swadeshi_cart');
+              localStorage.removeItem('swadeshi_last_uid');
+              localStorage.removeItem('customer_user');
+              sessionStorage.clear();
               window.location.href = '/';
             }
           } catch (error) {
@@ -555,6 +563,11 @@
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Registration failed');
 
+            localStorage.removeItem('swadeshi_cart');
+            localStorage.removeItem('swadeshi_last_uid');
+            localStorage.removeItem('customer_user');
+            sessionStorage.clear();
+
             showStatus(statusEl, 'Account created successfully!', 'success');
             setTimeout(() => { window.location.href = '/'; }, 1000);
           } catch (error) {
@@ -580,6 +593,11 @@
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'OTP verification failed');
+
+            localStorage.removeItem('swadeshi_cart');
+            localStorage.removeItem('swadeshi_last_uid');
+            localStorage.removeItem('customer_user');
+            sessionStorage.clear();
 
             showStatus(statusEl, 'Sign in successful!', 'success');
             setTimeout(() => { window.location.href = '/'; }, 1000);
