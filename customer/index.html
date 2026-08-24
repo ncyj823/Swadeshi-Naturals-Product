@@ -2450,14 +2450,58 @@
           <span>Total:</span>
           <span id="cartTotal" style="color:var(--brown-dark);">&#x20B9;0.00</span>
         </div>
-        <button onclick="openCheckout(this)"
-          style="width:100%;background:var(--green-cta);color:white;padding:13px;border-radius:6px;font-weight:700;font-size:14px;cursor:pointer;border:none;">
-          Proceed to Pay &rarr;
+        <button onclick="goToDeliveryStep()"
+          style="width:100%;background:var(--green-cta,#2d6a4f);color:white;padding:13px;border-radius:6px;font-weight:700;font-size:14px;cursor:pointer;border:none;">
+          Proceed to Delivery Details &rarr;
         </button>
       </div>
     </div>
 
-
+    <!-- ── STEP 2: Delivery Details Form ── -->
+    <div id="drawerStep2" style="display:none;flex-direction:column;height:100%;">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+        <button onclick="goToCartStep()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--brown-dark);font-weight:600;display:flex;align-items:center;gap:6px;">
+          &larr; Back to Cart
+        </button>
+        <button onclick="cartManager.closeDrawer()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--brown-dark);">&#x2715;</button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:20px;">
+        <h3 style="font-size:17px;font-weight:700;color:var(--brown-dark);margin-bottom:16px;">Delivery Details</h3>
+        <form id="delivery-address-form" onsubmit="event.preventDefault(); initiateRazorpayPayment();" style="display:grid;gap:14px;">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--text-dark,#2b2a22);margin-bottom:4px;text-transform:uppercase;">Full Name <span style="color:#a4392b;">*</span></label>
+            <input id="checkout-name" type="text" required placeholder="e.g. Rahul Sharma" style="width:100%;padding:10px 12px;border:1px solid var(--border,#e7e2d4);border-radius:6px;font-family:inherit;font-size:14px;box-sizing:border-box;">
+            <span id="error-checkout-name" style="color:#a4392b;font-size:11px;display:none;">Please enter your full name (at least 2 words).</span>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--text-dark,#2b2a22);margin-bottom:4px;text-transform:uppercase;">Phone Number <span style="color:#a4392b;">*</span></label>
+            <input id="checkout-phone" type="tel" required placeholder="10-digit mobile number" maxlength="15" style="width:100%;padding:10px 12px;border:1px solid var(--border,#e7e2d4);border-radius:6px;font-family:inherit;font-size:14px;box-sizing:border-box;">
+            <span id="error-checkout-phone" style="color:#a4392b;font-size:11px;display:none;">Please enter a valid 10-digit phone number.</span>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--text-dark,#2b2a22);margin-bottom:4px;text-transform:uppercase;">Email Address <span style="font-size:11px;font-weight:normal;color:#888;">(optional)</span></label>
+            <input id="checkout-email" type="email" placeholder="name@example.com" style="width:100%;padding:10px 12px;border:1px solid var(--border,#e7e2d4);border-radius:6px;font-family:inherit;font-size:14px;box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--text-dark,#2b2a22);margin-bottom:4px;text-transform:uppercase;">Complete Delivery Address <span style="color:#a4392b;">*</span></label>
+            <textarea id="checkout-address" required rows="3" placeholder="House/Flat No., Street, Locality, City, PIN code" style="width:100%;padding:10px 12px;border:1px solid var(--border,#e7e2d4);border-radius:6px;font-family:inherit;font-size:14px;box-sizing:border-box;resize:vertical;"></textarea>
+            <span id="error-checkout-address" style="color:#a4392b;font-size:11px;display:none;">Please enter complete delivery address with PIN code.</span>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--text-dark,#2b2a22);margin-bottom:4px;text-transform:uppercase;">Special Instructions <span style="font-size:11px;font-weight:normal;color:#888;">(optional)</span></label>
+            <input id="checkout-notes" type="text" placeholder="e.g. Near Community Hall, Leave at door" style="width:100%;padding:10px 12px;border:1px solid var(--border,#e7e2d4);border-radius:6px;font-family:inherit;font-size:14px;box-sizing:border-box;">
+          </div>
+          <div style="background:#f5f0e8;padding:12px;border-radius:6px;margin-top:8px;font-size:13px;display:flex;justify-content:space-between;align-items:center;">
+            <span>Order Total:</span>
+            <span id="checkout-summary-total" style="font-weight:700;color:var(--brown-dark);font-size:15px;">&#x20B9;0.00</span>
+          </div>
+          <button id="btn-submit-payment" type="submit"
+            style="width:100%;background:var(--green-cta,#2d6a4f);color:white;padding:13px;border-radius:6px;font-weight:700;font-size:14px;cursor:pointer;border:none;margin-top:10px;">
+            Pay with Razorpay &rarr;
+          </button>
+        </form>
+      </div>
+    </div>
 
     <!-- ── STEP 3: Success ── -->
     <div id="checkoutSuccess" style="display:none;height:100%;overflow-y:auto;">
@@ -3207,7 +3251,22 @@
         const res = await fetch(apiBase + '/api/customer/profile', { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
-          currentCustomer = data.user || data;
+          const user = data.user || data;
+          const prevUid = localStorage.getItem('swadeshi_last_uid');
+          const currentUid = String(user.id || user.customerId || '');
+
+          // If user switched accounts, flush previous user's cart
+          if (prevUid && prevUid !== currentUid) {
+            localStorage.removeItem('swadeshi_cart');
+            if (window.cartManager) {
+              cartManager.cart = {};
+              cartManager.saveCart();
+              cartManager.updateUI();
+            }
+          }
+          localStorage.setItem('swadeshi_last_uid', currentUid);
+          currentCustomer = user;
+
           if (container) {
             container.innerHTML = `
               <div class="user-auth-menu" style="display:flex;align-items:center;gap:8px;">
@@ -3224,15 +3283,13 @@
               </div>
             `;
           }
-          if (currentCustomer) {
-            // Check auth state but do not try to pre-fill deleted form fields
-          }
           return true;
         }
       } catch (err) {
         console.warn('[AUTH] Customer profile check failed:', err);
       }
       currentCustomer = null;
+      localStorage.removeItem('swadeshi_last_uid');
       if (container) {
         container.innerHTML = `
           <a href="/login.html" id="auth-header-btn" style="display:flex;align-items:center;gap:4px;color:var(--text-dark);font-weight:600;font-size:13px;text-decoration:none;">
@@ -3254,30 +3311,114 @@
         console.error('Logout failed:', err);
       }
       currentCustomer = null;
-      checkCustomerAuth();
+      localStorage.removeItem('swadeshi_cart');
+      localStorage.removeItem('swadeshi_last_uid');
+      localStorage.removeItem('customer_user');
+      sessionStorage.clear();
+      if (window.cartManager) {
+        cartManager.cart = {};
+        cartManager.saveCart();
+        cartManager.updateUI();
+      }
+      await checkCustomerAuth();
     }
 
     window.addEventListener('DOMContentLoaded', checkCustomerAuth);
 
     // ══════════════════════════════════════
-    // CHECKOUT FUNCTIONS
+    // MULTI-STEP CHECKOUT FUNCTIONS
     // ══════════════════════════════════════
-    async function openCheckout(btnElement) {
+    function goToCartStep() {
+      const step1 = document.getElementById('drawerStep1');
+      const step2 = document.getElementById('drawerStep2');
+      const step3 = document.getElementById('checkoutSuccess');
+      if (step1) step1.style.display = 'flex';
+      if (step2) step2.style.display = 'none';
+      if (step3) step3.style.display = 'none';
+    }
+
+    function goToDeliveryStep() {
       if (!currentCustomer) {
         alert("Please log in or register to place your order.");
         window.location.href = "/login.html";
         return;
       }
-      placeOrder(btnElement);
+      const items = cartManager.getCartItems();
+      if (!items.length) {
+        alert("Your cart is empty.");
+        return;
+      }
+
+      // Prefill fields from authenticated customer profile if available
+      const nameInput = document.getElementById('checkout-name');
+      const phoneInput = document.getElementById('checkout-phone');
+      const emailInput = document.getElementById('checkout-email');
+      const addressInput = document.getElementById('checkout-address');
+
+      if (nameInput && !nameInput.value && currentCustomer.name) {
+        nameInput.value = currentCustomer.name;
+      }
+      if (phoneInput && !phoneInput.value && currentCustomer.phone) {
+        phoneInput.value = currentCustomer.phone;
+      }
+      if (emailInput && !emailInput.value && currentCustomer.email) {
+        emailInput.value = currentCustomer.email;
+      }
+      if (addressInput && !addressInput.value && (currentCustomer.address || currentCustomer.loc)) {
+        addressInput.value = currentCustomer.address || currentCustomer.loc;
+      }
+
+      const summaryTotal = document.getElementById('checkout-summary-total');
+      if (summaryTotal) {
+        summaryTotal.textContent = '₹' + cartManager.getTotal().toFixed(2);
+      }
+
+      const step1 = document.getElementById('drawerStep1');
+      const step2 = document.getElementById('drawerStep2');
+      const step3 = document.getElementById('checkoutSuccess');
+      if (step1) step1.style.display = 'none';
+      if (step2) step2.style.display = 'flex';
+      if (step3) step3.style.display = 'none';
+    }
+
+    function validateCheckoutForm() {
+      let isValid = true;
+      const name = (document.getElementById('checkout-name')?.value || '').trim();
+      const phone = (document.getElementById('checkout-phone')?.value || '').trim();
+      const address = (document.getElementById('checkout-address')?.value || '').trim();
+
+      const errName = document.getElementById('error-checkout-name');
+      const errPhone = document.getElementById('error-checkout-phone');
+      const errAddress = document.getElementById('error-checkout-address');
+
+      if (name.split(/\s+/).filter(Boolean).length < 2) {
+        if (errName) errName.style.display = 'block';
+        isValid = false;
+      } else {
+        if (errName) errName.style.display = 'none';
+      }
+
+      const phoneDigits = phone.replace(/\D/g, '');
+      if (phoneDigits.length < 10) {
+        if (errPhone) errPhone.style.display = 'block';
+        isValid = false;
+      } else {
+        if (errPhone) errPhone.style.display = 'none';
+      }
+
+      if (address.length < 5) {
+        if (errAddress) errAddress.style.display = 'block';
+        isValid = false;
+      } else {
+        if (errAddress) errAddress.style.display = 'none';
+      }
+
+      return isValid;
     }
 
     function closeCheckout() {
-      const drawer = document.getElementById('drawerStep1');
-      if (drawer) drawer.style.display = 'flex';
-      const success = document.getElementById('checkoutSuccess');
-      if (success) success.style.display = 'none';
+      goToCartStep();
     }
-
 
     // Preload Razorpay on page load
     let isRazorpayLoading = false;
@@ -3291,168 +3432,176 @@
     }
     window.addEventListener('DOMContentLoaded', preloadRazorpay);
 
-    async function placeOrder(triggerBtn) {
-      console.log('1. Pay Now clicked, starting validation');
-
-      const btn = triggerBtn || document.querySelector('.btn-place-order');
-
-      if (!window.Razorpay) {
-        alert("Payment gateway is still loading. Please wait a second and try again.");
+    async function initiateRazorpayPayment() {
+      if (!validateCheckoutForm()) {
         return;
       }
-
+      if (!window.Razorpay) {
+        alert("Payment gateway is still loading. Please wait a moment and try again.");
+        return;
+      }
       if (!currentCustomer) {
         alert("Please log in or register to place your order.");
         window.location.href = "/login.html";
         return;
       }
 
-      const name = currentCustomer.name || 'Customer';
-      const phone = currentCustomer.phone || '';
-      const email = currentCustomer.email || '';
-      const address = currentCustomer.address || currentCustomer.locality || 'Customer Address';
-      const notes = '';
+      const name = document.getElementById('checkout-name').value.trim();
+      const phone = document.getElementById('checkout-phone').value.trim();
+      const email = document.getElementById('checkout-email').value.trim();
+      const address = document.getElementById('checkout-address').value.trim();
+      const notes = document.getElementById('checkout-notes').value.trim();
 
       const items = cartManager.getCartItems();
       const total = cartManager.getTotal();
-      if (!items.length) { alert('Your cart is empty.'); return; }
+      if (!items.length) {
+        alert("Your cart is empty.");
+        goToCartStep();
+        return;
+      }
 
       const availability = await validateCartAvailability();
       if (!availability.ok) {
         const names = availability.unavailable.map(item => item.title).join(', ');
-        alert(`Some items are out of stock or have limited stock: ${names}. Please update your cart before placing the order.`);
+        alert(`Some items are out of stock or have limited stock: ${names}. Please update your cart.`);
+        goToCartStep();
         return;
       }
 
+      const btn = document.getElementById('btn-submit-payment');
       if (btn) {
         btn.disabled = true;
-        btn.textContent = 'Starting Payment...';
+        btn.textContent = 'Initializing Payment...';
       }
 
       try {
-        console.log('2. Requesting order creation from backend');
-
-        // Setup timeout for fetch
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 seconds timeout
-
-        // 1. Ask our backend to create a Razorpay order for this amount
-        const payRes = await fetch(API_BASE + '/api/payment/create-order', {
+        const apiBase = (window.APP_CONFIG && window.APP_CONFIG.apiBase) || '';
+        const payRes = await fetch(apiBase + '/api/payment/create-order', {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             amount: total,
-            itemDetails: items.map(function (item) {
-              return { id: item.id, quantity: item.quantity };
-            })
-          }),
-          signal: controller.signal
+            itemDetails: items.map(i => ({ id: i.id, quantity: i.quantity }))
+          })
         });
 
-        clearTimeout(timeoutId);
-
         const payData = await payRes.json();
-        console.log('3. Backend response received:', payData);
-
         if (!payRes.ok || !payData.id) {
+          if (payRes.status === 401) {
+            alert("Session expired. Please log in again.");
+            window.location.href = "/login.html";
+            return;
+          }
           throw new Error(payData.error || 'Could not start payment. Please try again.');
         }
 
-        console.log('4. Initializing Razorpay checkout modal');
-        // 2. Open the Razorpay payment popup
         const rzp = new Razorpay({
           key: RAZORPAY_KEY_ID,
           amount: payData.amount,
           currency: payData.currency || 'INR',
           name: 'Swadeshi Natural Products',
-          description: 'Order payment',
+          description: 'Order Payment',
           order_id: payData.id,
-          prefill: { name: name, email: email, contact: phone },
+          prefill: {
+            name: name,
+            email: email || currentCustomer.email || '',
+            contact: phone || currentCustomer.phone || ''
+          },
           theme: { color: '#6b7a3f' },
-          handler: async function (response) {
-            console.log('5. Payment succeeded, verifying & saving to backend');
-            // 3. Payment succeeded — now save the order in our database
-            btn.textContent = 'Saving Order...';
+          handler: async function(response) {
+            if (btn) {
+              btn.textContent = 'Verifying & Placing Order...';
+            }
             try {
-              const itemDetails = items.map(function (item) {
-                return { id: item.id, name: item.title, quantity: item.quantity, price: item.price };
-              });
+              const itemDetails = items.map(item => ({
+                id: item.id,
+                name: item.title,
+                quantity: item.quantity,
+                price: item.price
+              }));
 
-              const orderRes = await fetch(API_BASE + '/api/orders', {
+              const orderRes = await fetch(apiBase + '/api/orders', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   customer: name,
                   customerPhone: phone,
                   customerEmail: email,
                   address: address,
-                  notes: (notes ? notes + ' | ' : '') + 'razorpay_payment_id: ' + response.razorpay_payment_id,
+                  notes: notes,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
                   itemDetails: itemDetails,
-                  amount: total,
-                  paymentStatus: 'Completed',
-                  status: 'Paid'
+                  amount: total
                 })
               });
+
               const orderData = await orderRes.json();
               if (!orderRes.ok || !orderData.ok) {
-                throw new Error('Payment succeeded but saving the order failed. Please contact us with your payment ID: ' + response.razorpay_payment_id);
+                throw new Error(orderData.error || 'Payment verification or order creation failed.');
               }
 
-              console.log('6. Order saved successfully');
+              // Order successfully saved!
               const orderId = orderData.order && orderData.order.id ? orderData.order.id : '';
               document.getElementById('successOrderId').textContent = orderId ? `Order ID: ${orderId}` : 'Order placed successfully.';
-              const drawerStep1 = document.getElementById('drawerStep1');
-              if (drawerStep1) drawerStep1.style.display = 'none';
-              document.getElementById('checkoutSuccess').style.display = 'block';
 
-              // Clear cart
+              const step1 = document.getElementById('drawerStep1');
+              const step2 = document.getElementById('drawerStep2');
+              const step3 = document.getElementById('checkoutSuccess');
+              if (step1) step1.style.display = 'none';
+              if (step2) step2.style.display = 'none';
+              if (step3) step3.style.display = 'block';
+
+              // Reset cart
               cartManager.cart = {};
               cartManager.saveCart();
+              cartManager.updateUI();
             } catch (saveErr) {
-              console.error('Order save failed:', saveErr);
-              alert(saveErr.message);
-              btn.disabled = false;
-              btn.textContent = 'Place Order →';
+              console.error('Order save error:', saveErr);
+              alert(saveErr.message || 'Payment succeeded but saving your order failed. Please contact support with payment ID: ' + response.razorpay_payment_id);
+              if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Pay with Razorpay →';
+              }
             }
           },
           modal: {
-            ondismiss: function () {
-              console.log('Razorpay modal dismissed by user');
+            ondismiss: function() {
+              console.log('Razorpay modal closed by user');
+              if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Pay with Razorpay →';
+              }
             }
           }
         });
 
-        rzp.on('payment.failed', function (response) {
-          console.error('Payment failed:', response.error);
-          alert('Payment failed: ' + response.error.description);
+        rzp.on('payment.failed', function(resp) {
+          console.error('Payment failed:', resp.error);
+          alert('Payment failed: ' + (resp.error ? resp.error.description : 'Transaction could not be completed.'));
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Pay with Razorpay →';
+          }
         });
 
         rzp.open();
 
       } catch (err) {
-        console.error('Order failed:', err);
-
-        let errorMsg = 'Something went wrong. Please try again or call us directly.';
-        if (err.name === 'AbortError') {
-          errorMsg = 'Payment request timed out. Please check your internet connection and try again.';
-        } else if (err.message && err.message.includes('Failed to fetch')) {
-          errorMsg = 'Network error. Please check your connection and try again.';
-        } else if (err.message) {
-          errorMsg = err.message;
-        }
-
-        alert(errorMsg);
-      } finally {
+        console.error('Payment initiation error:', err);
+        alert(err.message || 'Could not initiate payment. Please try again.');
         if (btn) {
           btn.disabled = false;
-          if (btn.textContent === 'Starting Payment...') {
-            btn.textContent = 'Proceed to Pay &rarr;';
-          }
+          btn.textContent = 'Pay with Razorpay →';
         }
       }
     }
 
     function finishCheckout() {
+      goToCartStep();
       cartManager.closeDrawer();
     }
   </script>
