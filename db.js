@@ -9,7 +9,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }, // Neon requires SSL; Neon's cert chain isn't in the default CA bundle
   max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000
+  connectionTimeoutMillis: 20000
 });
 
 pool.on('error', (err) => {

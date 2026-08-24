@@ -8,8 +8,8 @@ const pool = require('./db');
 
 // Secret for JWT signing – use env var for production.
 const JWT_SECRET = process.env.CUSTOMER_JWT_SECRET || 'swap_this_secret';
-// Token expiration (e.g., 10 minutes as requested)
-const JWT_EXPIRES_IN = '10m';
+// Token expiration
+const JWT_EXPIRES_IN = process.env.CUSTOMER_JWT_EXPIRES_IN || '7d';
 
 /**
  * Fetch Google OAuth Tokens
@@ -68,19 +68,42 @@ async function verifyPassword(password, hash) {
 }
 
 /**
- * Create a signed JWT for a given customer ID.
+ * Create a signed JWT for a given customer.
+ * Accepts either a customer ID or an object with customer fields.
  */
-function createCustomerToken(customerId) {
-  return jwt.sign({ customerId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+function createCustomerToken(customerOrId) {
+  const customerId = typeof customerOrId === 'object' && customerOrId !== null
+    ? String(customerOrId.id || customerOrId.customerId || customerOrId.userId)
+    : String(customerOrId);
+
+  const payload = {
+    customerId,
+    userId: customerId,
+    sub: customerId
+  };
+
+  if (typeof customerOrId === 'object' && customerOrId !== null) {
+    if (customerOrId.email) payload.email = customerOrId.email;
+    if (customerOrId.name) payload.name = customerOrId.name;
+  }
+
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
 /**
- * Middleware helper – verify JWT from cookie.
+ * Middleware helper – verify JWT from cookie or header.
  * Returns the decoded payload or null.
  */
 function verifyCustomerToken(token) {
+  if (!token) return null;
   try {
-    return jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!decoded) return null;
+    const uid = String(decoded.customerId || decoded.userId || decoded.sub || decoded.id || '');
+    if (!uid) return null;
+    decoded.customerId = uid;
+    decoded.userId = uid;
+    return decoded;
   } catch (e) {
     return null;
   }
