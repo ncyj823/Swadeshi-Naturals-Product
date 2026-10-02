@@ -926,3 +926,106 @@ img {
   }
 }
 
+/* ==========================================================================
+   PHASE 2 CONFLICT RESOLUTION
+   These !important overrides exist because the inline <style> block in the
+   HTML pages loads AFTER this stylesheet, giving legacy rules higher cascade
+   priority. These rules are scoped tightly to ds-* components only.
+   ========================================================================== */
+
+/* Ensure ds-nav has white background — not the dark brown from legacy 'nav' rule */
+.ds-nav {
+  background-color: var(--color-white) !important;
+  border-bottom: 1px solid var(--color-gray-light) !important;
+}
+
+/* Ensure ds-nav-link has correct color — not white-on-white from legacy 'nav a' rule */
+.ds-nav-link {
+  color: var(--color-text-body) !important;
+  background: transparent !important;
+  font-size: var(--font-size-small) !important;
+  padding: var(--space-3) 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.ds-nav-link:hover,
+.ds-nav-link.active {
+  color: var(--color-primary) !important;
+  background: transparent !important;
+}
+
+/* Ensure ds-action-link has correct appearance — not overridden by .header-icons a */
+.ds-action-link {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 2px !important;
+  color: var(--color-text-body) !important;
+  font-size: var(--font-size-caption) !important;
+  font-weight: var(--font-weight-medium) !important;
+  text-decoration: none !important;
+}
+
+.ds-action-link:hover {
+  color: var(--color-primary) !important;
+  background: transparent !important;
+}
+
+.ds-action-link svg {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+/* Ensure ds-cart-btn pill radius is not overridden by legacy .cart-btn rule */
+.ds-cart-btn {
+  border-radius: var(--radius-pill) !important;
+  background-color: var(--color-primary) !important;
+  color: var(--color-white) !important;
+  padding: var(--space-2) var(--space-4) !important;
+  font-size: var(--font-size-small) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--space-2) !important;
+  text-decoration: none !important;
+}
+
+.ds-cart-btn:hover {
+  background-color: var(--color-primary-dark) !important;
+  color: var(--color-white) !important;
+}
+
+/* Ensure search bar transparency — not overridden by legacy .search-bar button */
+.ds-header-search {
+  background-color: var(--color-ivory) !important;
+  border: 1px solid var(--color-gray-light) !important;
+  border-radius: var(--radius-pill) !important;
+}
+
+.ds-header-search button {
+  background-color: transparent !important;
+  color: var(--color-primary) !important;
+  padding: var(--space-3) var(--space-4) !important;
+}
+
+/* Ensure ds-logo-img has controlled dimensions */
+.ds-logo-img {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: var(--radius-md) !important;
+  object-fit: cover !important;
+  flex-shrink: 0 !important;
+}
+
+/* Lang button should not inherit .header-icons a or ds-action-link flex-direction */
+.ds-lang-btn {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  color: var(--color-text-body) !important;
+  font-size: 16px !important;
+  background: none !important;
+  border: none !important;
+}
+
+
