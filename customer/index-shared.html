@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -165,7 +165,7 @@
   font-family: 'Poppins', sans-serif;
   color: var(--text-dark);
   background: var(--white);
-  font-size: 14px;
+  /* font-size: 14px removed - design-system.css body rule sets 1rem (16px) */
   line-height: 1.6;
   overflow-x: hidden;
   overflow-y: visible;
@@ -181,7 +181,8 @@
       width: 100%;
     }
 
-    a {
+    /* Scoped legacy a reset - preserve ds-* link styling */
+    a:not(.ds-action-link):not(.ds-nav-link):not(.ds-cart-btn):not(.ds-logo):not(.ds-mobile-nav-link) {
       text-decoration: none;
       color: inherit;
     }
@@ -290,7 +291,7 @@
       background: var(--cream-light);
     }
 
-    .search-bar button {
+    .search-bar:not(.ds-header-search) button {
       background: var(--brown-accent);
       color: white;
       padding: 9px 16px;
@@ -305,7 +306,7 @@
       flex-shrink: 0;
     }
 
-    .header-icons a {
+    .header-icons a:not(.ds-action-link):not(.ds-cart-btn) {
       display: flex;
       align-items: center;
       gap: 5px;
@@ -313,7 +314,7 @@
       font-size: 12px;
     }
 
-    .header-icons svg {
+    .header-icons a:not(.ds-action-link):not(.ds-cart-btn) svg, .header-icons button:not(.ds-lang-btn) svg {
       width: 20px;
       height: 20px;
     }
@@ -349,8 +350,8 @@
       stroke: #ffffff !important;
     }
 
-    /* ===== NAV ===== */
-    nav {
+    /* ===== NAV (legacy - scoped away from Phase 2 ds-nav) ===== */
+    nav:not(.ds-nav):not(.ds-mobile-drawer-panel) {
       background: var(--brown-dark);
     }
 
@@ -362,7 +363,7 @@
       align-items: center;
     }
 
-    nav a {
+    nav:not(.ds-nav):not(.ds-mobile-drawer-panel) a {
       color: rgba(255, 255, 255, 0.88);
       font-size: 12.5px;
       font-weight: 500;
@@ -373,8 +374,8 @@
       letter-spacing: 0.4px;
     }
 
-    nav a:hover,
-    nav a.active {
+    nav:not(.ds-nav):not(.ds-mobile-drawer-panel) a:hover,
+    nav:not(.ds-nav):not(.ds-mobile-drawer-panel) a.active {
       background: rgba(255, 255, 255, 0.12);
       color: white;
     }
@@ -1452,7 +1453,7 @@
         padding: 7px 10px;
       }
 
-      nav a {
+      nav:not(.ds-nav):not(.ds-mobile-drawer-panel) a {
         padding: 12px 10px;
         font-size: 11px;
       }
@@ -1966,7 +1967,7 @@
         display: none;
       }
 
-      nav a {
+      nav:not(.ds-nav):not(.ds-mobile-drawer-panel) a {
         white-space: nowrap;
         font-size: 11px;
         padding: 10px 12px;
