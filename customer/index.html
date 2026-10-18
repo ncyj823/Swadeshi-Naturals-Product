@@ -152,21 +152,20 @@
     }
 
   html {
-  width: 100%;
-  overflow-x: hidden;
+    width: 100%;
+    overflow-x: clip;
   }
 
   body {
-  width: 100%;
-  min-height: 100%;
-  margin: 0;
-  padding-bottom: 80px;
-  font-family: 'Poppins', sans-serif;
-  color: var(--text-dark);
-  background: var(--white);
-  /* font-size: 14px removed - design-system.css body rule sets 1rem (16px) */
-  line-height: 1.6;
-  overflow-x: hidden;
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding-bottom: 80px;
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-dark);
+    background: var(--white);
+    /* font-size: 14px removed - design-system.css body rule sets 1rem (16px) */
+    line-height: 1.6;
   }
 
     body.cart-active {
@@ -1341,8 +1340,8 @@
     }
 
     @media (max-width: 768px) {
-      body {
-        overflow-x: hidden;
+      html {
+        overflow-x: clip;
       }
 
       .header-inner {
@@ -1925,8 +1924,10 @@
 
     /* ===== MOBILE RESPONSIVE ===== */
     @media (max-width: 768px) {
-      html, body {
-        overflow-x: hidden;
+      html {
+        overflow-x: clip;
+      }
+      body {
         width: 100%;
         position: relative;
       }
